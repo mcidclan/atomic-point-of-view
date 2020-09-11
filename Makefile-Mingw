@@ -1,13 +1,14 @@
-OBJS = main.o math.o
 BIN = ./bin/
+EXE = apov.exe
+OBJS = main.o math.o utils.o
 OBJS := $(addprefix $(BIN), $(OBJS))
 
-CXFLAGS = -Wall -m32
+CXFLAGS = -Wpadded -Wpacked -Wall -m32
 LDFLAGS = -lstdc++
 
-all: $(BIN)apov.exe
+all: $(BIN)$(EXE)
 
-$(BIN)apov.exe: $(OBJS)
+$(BIN)$(EXE): $(OBJS)
 	gcc -o $@ $^ $(LDFLAGS)
 
 $(BIN)%.o: %.cpp

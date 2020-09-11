@@ -2,34 +2,16 @@
  * APoV project
  * By m-c/d in 2020
  */
- 
-#include <stdio.h>
-#include "./headers/math.hpp"
 
-#define ENABLE_LOGS true
-#define log ENABLE_LOGS && printf
+#include "./headers/math.hpp"
+#include "./headers/utils.hpp"
 
 #define SPACE_SIZE 512
-#define SPACE_ATOM_QUANTTY 0x8000000 // 512x512x512
+static const u16 SPACE_HALF_SIZE = SPACE_SIZE / 2; 
+static const u32 SPACE_ATOM_QUANTTY = (u32)pow(SPACE_SIZE, 3);
+static const u16 SPACE_SIZE_POWER_VALUE = math::getPower<u16>(SPACE_SIZE);
 
-//static u32 space[SPACE_ATOM_QUANTTY] = {0};
-
-template <typename T>
-T* getBinaryContent(const char* const filename) {
-    FILE* const file = fopen(filename, "rb");
-    if(file != NULL) {
-        fseek(file, 0, SEEK_END);
-        const u32 size = ftell(file) / sizeof(T);
-        log("%s contents %u elements.\n", filename, size);
-        if(size > 0) {
-            T* const content = new T[size];
-            rewind(file);
-            fread((void*)content, sizeof(T), size, file);
-            return content;
-        }
-    }
-    return NULL;
-}
+static u32 space[SPACE_ATOM_QUANTTY] = {0};
 
 template <typename T>
 bool isContained(Vec4<T>* const coordinates, const T size) {
@@ -41,36 +23,40 @@ bool isContained(Vec4<T>* const coordinates, const T size) {
     return false;
 }
 
-
 void fillSpace(Voxel* const voxels, const u32 quantity) {
-    u32 i = quantity;
+    u32 i = quantity;    
     while(i--) {
         Voxel* const voxel = &voxels[i];
-                
         if(isContained<u16>(&voxel->coordinates, SPACE_SIZE)) {
-            
-            /*voxel.coordinates.x
-            voxel.coordinates.y
-            voxel.coordinates.z
-            
-            space[] = voxel->color;*/         
+            const u32 offset = ((voxel->coordinates.x + SPACE_HALF_SIZE) &
+            ((voxel->coordinates.y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) &
+            ((voxel->coordinates.z + SPACE_HALF_SIZE) << (SPACE_SIZE_POWER_VALUE * 2)));
+            space[offset] = voxel->color;      
         }
     }
 }
 
+u32 getColorFromSpace(const u16 x, const u16 y, const u16 z) {
+    const u32 offset = ((x + SPACE_HALF_SIZE) &
+    ((y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) &
+    ((z + SPACE_HALF_SIZE) << (SPACE_SIZE_POWER_VALUE * 2)));
+    return space[offset];
+}
+
 int main(int argc, char** argv) {
-    /*u32 i = 0;
-    while(i < SPACE_ATOM_QUANTTY) {
-        i++;
-    }*/
-    /*u32* content = getBinaryContent<u32>("voxels.bin");
-    if(content != NULL) {
-        printf("size: %u\n", content[0]);
-    } else {
-        printf("content is null");
-    }*/
     
-    printf("power %u %u\n", i, math::getPower<u16>(0));
+    u32 size = 0;
+    Voxel* voxels = utils::getBinaryContent<Voxel>("voxels.bin", &size);
     
+    if(voxels == NULL) {
+        printf("File content is null");
+    }
+    
+    fillSpace(voxels, size);
+    const u32 color = getColorFromSpace(-15,-48,-33);
+    printf("Color a: 0x%08x\n", voxels[0].color);
+    printf("Color b: 0x%08x\n", color);
+    
+    delete [] voxels;
     return 0;
 }
