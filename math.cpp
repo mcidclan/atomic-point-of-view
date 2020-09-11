@@ -6,7 +6,7 @@ namespace math {
         return v < 0 ? -v : v;
     }
     
-    template u16 abs<u16>(const u16);
+    template i16 abs(const i16);
 
 
     template<typename T>
@@ -22,5 +22,5 @@ namespace math {
         return power;
     }
     
-    template u16 getPower<u16>(u16);
+    template u16 getPower(u16);
 };

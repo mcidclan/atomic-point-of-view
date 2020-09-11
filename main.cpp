@@ -15,36 +15,35 @@ static u32 space[SPACE_ATOM_QUANTTY] = {0};
 
 template <typename T>
 bool isContained(Vec4<T>* const coordinates, const T size) {
-    if(math::abs(coordinates->x) < size &&
-        math::abs(coordinates->y) < size &&
-        math::abs(coordinates->z) < size) {
+    if(math::abs(coordinates->x) < size + SPACE_HALF_SIZE &&
+        math::abs(coordinates->y) < size + SPACE_HALF_SIZE&&
+        math::abs(coordinates->z) < size + SPACE_HALF_SIZE) {
         return true;
     }
     return false;
 }
 
 void fillSpace(Voxel* const voxels, const u32 quantity) {
-    u32 i = quantity;    
+    u32 i = quantity;
     while(i--) {
         Voxel* const voxel = &voxels[i];
-        if(isContained<u16>(&voxel->coordinates, SPACE_SIZE)) {
-            const u32 offset = ((voxel->coordinates.x + SPACE_HALF_SIZE) &
-            ((voxel->coordinates.y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) &
-            ((voxel->coordinates.z + SPACE_HALF_SIZE) << (SPACE_SIZE_POWER_VALUE * 2)));
-            space[offset] = voxel->color;      
+        if(isContained<i16>(&voxel->coordinates, SPACE_SIZE)) {
+            const u32 offset = ((voxel->coordinates.x + SPACE_HALF_SIZE) |
+            (voxel->coordinates.y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE |
+            (voxel->coordinates.z + SPACE_HALF_SIZE) << (SPACE_SIZE_POWER_VALUE * 2));            
+            space[offset] = voxel->color;
         }
     }
 }
 
-u32 getColorFromSpace(const u16 x, const u16 y, const u16 z) {
-    const u32 offset = ((x + SPACE_HALF_SIZE) &
-    ((y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) &
-    ((z + SPACE_HALF_SIZE) << (SPACE_SIZE_POWER_VALUE * 2)));
+u32 getColorFromSpace(const i16 x, const i16 y, const i16 z) {
+    const u32 offset = ((x + SPACE_HALF_SIZE) |
+    (y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE |
+    (z + SPACE_HALF_SIZE) << (SPACE_SIZE_POWER_VALUE * 2));
     return space[offset];
 }
 
 int main(int argc, char** argv) {
-    
     u32 size = 0;
     Voxel* voxels = utils::getBinaryContent<Voxel>("voxels.bin", &size);
     
@@ -53,9 +52,10 @@ int main(int argc, char** argv) {
     }
     
     fillSpace(voxels, size);
+    
+    // Test
     const u32 color = getColorFromSpace(-15,-48,-33);
-    printf("Color a: 0x%08x\n", voxels[0].color);
-    printf("Color b: 0x%08x\n", color);
+    printf("Color: 0x%08x\n", color);
     
     delete [] voxels;
     return 0;
