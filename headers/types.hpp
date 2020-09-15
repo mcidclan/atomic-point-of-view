@@ -3,6 +3,8 @@
 
     #include <cstdio>
     
+    #define ATOMIC_POV_QUANTITY 6
+    
     #define i8 char
     #define i16 short int
     #define i32 int
@@ -24,6 +26,15 @@
     struct Voxel {
         u32 color;
         Vec4<i16> coordinates;
+    };
+    
+    struct Axis {
+        float x, y, z;
+    };
+    
+    struct Atom {
+        u32 colors[ATOMIC_POV_QUANTITY];
+        u16 depth;
     };
     
 #endif

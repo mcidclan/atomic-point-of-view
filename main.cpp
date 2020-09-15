@@ -8,15 +8,24 @@
 
 #define SPACE_SIZE 512
 static const u16 SPACE_HALF_SIZE = SPACE_SIZE / 2; 
-static const u32 SPACE_ATOM_QUANTTY = (u32)pow(SPACE_SIZE, 3);
+static const u32 SPACE_ATOM_QUANTITY = (u32)pow(SPACE_SIZE, 3);
 static const u16 SPACE_SIZE_POWER_VALUE = math::getPower<u16>(SPACE_SIZE);
 
-static u32 space[SPACE_ATOM_QUANTTY] = {0};
+static u32 space[SPACE_ATOM_QUANTITY] = {0};
 
+static const Axis spinAxis[ATOMIC_POV_QUANTITY] = {
+    {1.0f, 0.0f, 0.0f},
+    {-1.0f, 0.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f},
+    {0.0f, -1.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f},
+    {0.0f, 0.0f, -1.0f}
+};
+    
 template <typename T>
 bool isContained(Vec4<T>* const coordinates, const T size) {
     if(math::abs(coordinates->x) < size + SPACE_HALF_SIZE &&
-        math::abs(coordinates->y) < size + SPACE_HALF_SIZE&&
+        math::abs(coordinates->y) < size + SPACE_HALF_SIZE &&
         math::abs(coordinates->z) < size + SPACE_HALF_SIZE) {
         return true;
     }
@@ -43,6 +52,13 @@ u32 getColorFromSpace(const i16 x, const i16 y, const i16 z) {
     return space[offset];
 }
 
+void genAPoVSpace() {
+    u8 i = 0;
+    while(i--) {
+        
+    }
+}
+
 int main(int argc, char** argv) {
     u32 size = 0;
     Voxel* voxels = utils::getBinaryContent<Voxel>("voxels.bin", &size);
@@ -52,11 +68,11 @@ int main(int argc, char** argv) {
     }
     
     fillSpace(voxels, size);
-    
     // Test
     const u32 color = getColorFromSpace(-15,-48,-33);
     printf("Color: 0x%08x\n", color);
-    
     delete [] voxels;
+    
+    genAPoVSpace();
     return 0;
 }
