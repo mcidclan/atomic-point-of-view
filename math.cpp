@@ -23,4 +23,15 @@ namespace math {
     }
     
     template u16 getPower(u16);
+    
+    
+    template <typename T>
+    Vec3<T> mulVector(Vec3<T> v, const float s) {
+        v.x *= s;
+        v.y *= s;
+        v.z *= s;
+        return v;
+    }
+    
+    template Vec3<float> mulVector(Vec3<float>, const float);
 };

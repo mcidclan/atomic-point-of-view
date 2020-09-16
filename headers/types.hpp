@@ -28,13 +28,9 @@
         Vec4<i16> coordinates;
     };
     
-    struct Axis {
-        float x, y, z;
-    };
-    
     struct Atom {
-        u32 colors[ATOMIC_POV_QUANTITY];
         u16 depth;
+        u32 colors[ATOMIC_POV_QUANTITY];
     };
     
 #endif
