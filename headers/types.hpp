@@ -3,7 +3,7 @@
 
     #include <cstdio>
     
-    #define ATOMIC_POV_QUANTITY 6
+    #define ATOMIC_POV_QUANTITY 1
     
     #define i8 char
     #define i16 short int
@@ -12,6 +12,13 @@
     #define u8 unsigned i8
     #define u16 unsigned i16
     #define u32 unsigned i32
+    
+    #define u32max ((u32)-1)
+    
+    template<typename T>
+    struct Vec2 {
+        T x, y;
+    };
     
     template<typename T>
     struct Vec3 {
@@ -28,9 +35,13 @@
         Vec4<i16> coordinates;
     };
     
-    struct Atom {
+    struct Quantum {
         u16 depth;
-        u32 colors[ATOMIC_POV_QUANTITY];
+        u32 colors;
+    };
+    
+    struct Atom {
+        Quantum quanta[ATOMIC_POV_QUANTITY];
     };
     
 #endif

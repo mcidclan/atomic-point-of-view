@@ -41,10 +41,10 @@ namespace math {
         const float norm = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w);
         return {
             v.x / norm, v.y / norm, v.z / norm, v.w / norm
-        }
+        };
     }
 
-    Vec4<float> getConjugate(const Vec4 qa) {
+    Vec4<float> getConjugate(const Vec4<float> qa) {
         return {
             -qa.x, -qa.y, -qa.z, qa.w
         };
@@ -59,19 +59,19 @@ namespace math {
         };
     }
 
-    Vec4<float> getSandwichProduct(const Vec4 v, const Vec4 q) {
+    Vec4<float> getSandwichProduct(const Vec4<float> v, const Vec4<float> q) {
         return mulQuat(mulQuat(q, v), getConjugate(q));
     }
 
-    Vec4<float> getOrientedQuat(const Vec2<float> orientation) {
-        if(abs(y) > 1.0) {
-            y = y / abs(y);
+    Vec4<float> getOrientedQuat(Vec2<float> orientation) {
+        if(abs(orientation.y) > 1.0) {
+            orientation.y = orientation.y / abs(orientation.y);
         }
-        y = 1.0 - y;
-        return normalize({x, y, -1.0, 0.0});
+        orientation.y = 1.0 - orientation.y;
+        return getNormalized4({orientation.x, orientation.y, -1.0, 0.0});
     }
 
     Vec4<float> getReoriented(const Vec4<float> v, const Vec2<float> orientation) {        
-        return getSandwichProduct(position, getOrientedQuat(orientation.x);
+        return getSandwichProduct(v, getOrientedQuat(orientation));
     }
 };
