@@ -6,8 +6,8 @@
 #include "./headers/math.hpp"
 #include "./headers/utils.hpp"
 
-#define SPACE_SIZE 512
-#define MAX_RAY_DEPTH 32
+#define SPACE_SIZE 256
+#define MAX_RAY_DEPTH 64
 #define CURRENT_SPIN 0
 static const float COLOR_DEPTH_STEP = (1.0f/(float)MAX_RAY_DEPTH);
 
@@ -44,22 +44,22 @@ bool isContained(T1* const coordinates, const T2 size) {
 template <typename T>
 u32 getOffset(T* const coordinates) {
     if(isContained(coordinates, SPACE_SIZE)) {
-        return ((coordinates->x + SPACE_HALF_SIZE) |
-            (coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE |
-            (coordinates->z + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2);
+        return (((i16)coordinates->x + SPACE_HALF_SIZE) |
+            (((i16)coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) |
+            (((i16)coordinates->z + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2));
     }
     return u32max;
 }
 
 // slow
-/*template<typename T>
+template<typename T>
 Vec3<T> getCoordinates(const u32 offset) {
     const T x = ((T)(offset % SPACE_SIZE)) - SPACE_HALF_SIZE;
     const T y = ((T)((offset / SPACE_SIZE) % SPACE_SIZE)) - SPACE_HALF_SIZE;
     const T z = ((T)(offset / SPACE_2D_SIZE)) - SPACE_HALF_SIZE;
     return {x, y, z};
-}*/
-
+}
+/*
 template<typename T>
 Vec3<T> getCoordinates(const u32 offset) {
     return {
@@ -67,7 +67,7 @@ Vec3<T> getCoordinates(const u32 offset) {
         ((T)(offset & (SPACE_SIZE_DIGITS << SPACE_SIZE_POWER_VALUE))) - SPACE_HALF_SIZE,
         ((T)(offset & (SPACE_SIZE_DIGITS << SPACE_SIZE_POWER_VALUE_X2))) - SPACE_HALF_SIZE
     };
-}
+}*/
 
 void fillSpace(Voxel* const voxels, const u32 quantity) {
     u32 i = quantity;
@@ -80,13 +80,14 @@ void fillSpace(Voxel* const voxels, const u32 quantity) {
     }
 }
 
-Quantum getQuantum(const u32 color, const u16 depth) {
+// Wrong
+Quantum getQuantum(const u32 color, const u8 depth) {
     const float darkness = 1.0f - depth * COLOR_DEPTH_STEP;    
     return {
         depth, (
-        (u32)(((color & 0xFF000000) >> 24) * darkness) |
-        (u32)(((color & 0x00FF0000) >> 16) * darkness) |
-        (u32)(((color & 0x0000FF00) >> 8) * darkness) |
+        ((u32)(((color & 0xFF000000) >> 24) * darkness) << 24) |
+        ((u32)(((color & 0x00FF0000) >> 16) * darkness) << 16) |
+        ((u32)(((color & 0x0000FF00) >> 8) * darkness) << 8) |
         (u32)(color & 0x000000FF))
     };
 }
@@ -101,17 +102,21 @@ void genApovSpace() {
             printf(">%d ", percent);
             percent+=10;
         }
-        u16 depth = 0;
-        Vec3<float> axis = spinAxis[spin];
-        Vec3<float> coordinates = getCoordinates<float>(i);
+        i8 depth = 0;
+        const Vec3<float> axis = spinAxis[spin];
+        const Vec3<float> coordinates = getCoordinates<float>(i);
         while(depth < MAX_RAY_DEPTH) {
             // Todo: rotation
-            Vec3<i16> ray = math::mulVector<float, i16>(&axis, (float)depth);
-            math::addVector(&ray, &coordinates);
+            Vec3<float> ray = {
+                coordinates.x + ((float)depth) * axis.x,
+                coordinates.y + ((float)depth) * axis.y,
+                coordinates.z + ((float)depth) * axis.z
+            };
             const u32 offset = getOffset(&ray);
             if(offset != u32max) {
                 if(space[offset] != 0) {
                     apov[i].quanta[spin] = getQuantum(space[offset], depth);
+                    break;
                 }
             }
             depth++;
