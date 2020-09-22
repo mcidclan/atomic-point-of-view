@@ -25,17 +25,28 @@ namespace math {
     template u16 getPower(u16);
     
     
-    template <typename T>
-    Vec3<T> mulVector(Vec3<T> v, const float s) {
-        v.x *= s;
-        v.y *= s;
-        v.z *= s;
-        return v;
+    template <typename T1, typename T2>
+    Vec3<T2> mulVector(Vec3<T1>* const v, const float s) {
+        return {
+            (T2)(v->x * s),
+            (T2)(v->y * s),
+            (T2)(v->z * s)
+        };
     }
     
-    template Vec3<float> mulVector(Vec3<float>, const float);
+    template Vec3<i16> mulVector(Vec3<float>* const, const float);
 
 
+    template <typename T1, typename T2>
+    void addVector(Vec3<T1>* const va, Vec3<T2>* const vb) {
+        va->x += vb->x;
+        va->y += vb->y;
+        va->z += vb->z;
+    }
+
+    template void addVector(Vec3<i16>* const, Vec3<float>* const);
+
+    
     // Quaternions related functions
     Vec4<float> getNormalized4(Vec4<float> v) {
         const float norm = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w);

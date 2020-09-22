@@ -10,9 +10,18 @@
     #include <cmath>
     
     namespace math {
-        template<typename T> T abs(const T);
-        template<typename T> T getPower(T);
-        template<typename T> Vec3<T> mulVector(Vec3<T>, const float);
+        template<typename T>
+        T abs(const T);
+        
+        template<typename T>
+        T getPower(T);
+        
+        template<typename T1, typename T2>
+        Vec3<T2> mulVector(Vec3<T1>* const, const float);
+        
+        template <typename T1, typename T2>
+        void addVector(Vec3<T1>* const, Vec3<T2>* const);
+        
         // Quaternions related functions
         Vec4<float> getNormalized4(Vec4<float>);
         Vec4<float> getConjugate(const Vec4<float>);

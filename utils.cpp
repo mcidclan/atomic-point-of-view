@@ -15,6 +15,7 @@ namespace utils {
                 fread((void*)content, sizeof(T), *size, file);
                 return content;
             }
+            fclose(file);
         }
         return NULL;
     }
