@@ -21,4 +21,15 @@ namespace utils {
     }
     
     template Voxel* getBinaryContent(const char* const, u32*);
+    
+    template <typename T>
+    void genBinaryContent(const char* const filename, T* const data, const u32 count) {
+        FILE* const file = fopen(filename, "wb");
+        if(file != NULL) {
+            fwrite((void*)data, sizeof(T), count, file);
+            fclose(file);
+        }
+    }
+    
+    template void genBinaryContent(const char* const, Atom* const, const u32);
 }

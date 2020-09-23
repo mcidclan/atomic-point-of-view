@@ -35,13 +35,13 @@
         Vec4<i16> coordinates;
     };
     
-    struct Quantum {
-        u16 depth;
+    /*struct Quantum {
+        u32 depth;
         u32 colors;
-    };
+    };*/
     
     struct Atom {
-        Quantum quanta[ATOMIC_POV_QUANTITY];
+        u32 quanta[ATOMIC_POV_QUANTITY];
     };
     
 #endif
