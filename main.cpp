@@ -21,15 +21,15 @@ static const u32 SPACE_SIZE_DIGITS_Y = SPACE_SIZE_DIGITS_X << SPACE_SIZE_POWER_V
 static const u32 SPACE_SIZE_DIGITS_Z = SPACE_SIZE_DIGITS_X << SPACE_SIZE_POWER_VALUE_X2;
 
 static u32 space[SPACE_ATOM_QUANTITY] = {0};
-static Atom apov[SPACE_ATOM_QUANTITY] = {{0}};
+//static Atom apov[SPACE_ATOM_QUANTITY] = {{0}};
 
 static const Vec3<float> spinAxis[ATOMIC_POV_QUANTITY] = {
-//    {1.0f, 0.0f, 0.0f},
-//    {-1.0f, 0.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f},
+    {-1.0f, 0.0f, 0.0f},
+    {0.0f, 0.0f, -1.0f},
+    {1.0f, 0.0f, 0.0f}    
 //    {0.0f, 1.0f, 0.0f},
 //    {0.0f, -1.0f, 0.0f},
-    {0.0f, 0.0f, 1.0f},
-//    {0.0f, 0.0f, -1.0f}
 };
     
 template <typename T>
@@ -93,38 +93,50 @@ u32 getQuantum(const u32 color, const u8 depth) {
     };
 }
 
-void genApovSpace() {
-    u8 percent = 0;
-    u32 i = SPACE_ATOM_QUANTITY;
-    const u8 spin = CURRENT_SPIN;
-    const u32 step = SPACE_ATOM_QUANTITY / 100;
-    while(--i) {
-        if((step > 0) && (i % (step * 5) == 0)) {
-            percent+=5;
-            printf(">%d ", percent);
-        }
-        float depth = 0.0f;
-        const Vec3<float> axis = spinAxis[spin];
-        const Vec3<float> coordinates = getCoordinates<float>(i);
-        while(depth < MAX_RAY_DEPTH) {
-            // Todo: rotation
-            Vec3<float> ray = {
-                coordinates.x + depth * axis.x,
-                coordinates.y + depth * axis.y,
-                coordinates.z + depth * axis.z
-            };
-            //printf("coordinates %f %f %f\n", coordinates.x,coordinates.y,coordinates.z);
-            const u32 offset = getOffset(&ray);
-            if(offset != u32max) {
-                if(space[offset] != 0) {
-                apov[i].quanta[spin] = getQuantum(space[offset], (u8)depth);
-                    break;
-                }
+void genApovSpace(const char* const filename) {
+    FILE* const file = fopen(filename, "wb");
+    if(file != NULL) {
+        u8 percent = 0;
+        u32 i = SPACE_ATOM_QUANTITY;
+        //const u8 spin = CURRENT_SPIN;
+        const u32 step = SPACE_ATOM_QUANTITY / 100;
+        while(--i) {
+            if((step > 0) && (i % (step * 5) == 0)) {
+                percent+=5;
+                printf(">%d ", percent);
             }
-            depth++;
+            float depth = 0.0f;
+            const Vec3<float> coordinates = getCoordinates<float>(i);
+            
+            u8 spin = 0;
+            Atom atom;
+            while(spin < ATOMIC_POV_QUANTITY) {
+                const Vec3<float> axis = spinAxis[spin];
+                while(depth < MAX_RAY_DEPTH) {
+                    // Todo: rotation
+                    Vec3<float> ray = {
+                        coordinates.x + depth * axis.x,
+                        coordinates.y + depth * axis.y,
+                        coordinates.z + depth * axis.z
+                    };
+                    //printf("coordinates %f %f %f\n", coordinates.x,coordinates.y,coordinates.z);
+                    const u32 offset = getOffset(&ray);
+                    if(offset != u32max) {
+                        if(space[offset] != 0) {
+                            atom.quanta[spin] = getQuantum(space[offset], (u8)depth);
+                            //apov[i].quanta[spin] = getQuantum(space[offset], (u8)depth);
+                            break;
+                        }
+                    }
+                    depth++;
+                }
+                spin++;
+            }
+            fwrite((void*)&atom, sizeof(Atom), 1, file);
         }
+        printf("\n");
+        fclose(file);
     }
-    printf("\n");
 }
 
 int main(int argc, char** argv) {
@@ -146,8 +158,8 @@ int main(int argc, char** argv) {
         printf("Color: 0x%08x\n", color);
     } else printf("!!!Out of space!!!");
     
-    genApovSpace();
-    utils::genBinaryContent<Atom>("atoms.bin", apov, SPACE_ATOM_QUANTITY);
+    genApovSpace("atoms.bin");
+    //utils::genBinaryContent<Atom>("atoms.bin", apov, SPACE_ATOM_QUANTITY);
     printf("Generation done!\n");
     return 0;
 }

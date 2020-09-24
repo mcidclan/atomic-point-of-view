@@ -3,7 +3,7 @@
 
     #include <cstdio>
     
-    #define ATOMIC_POV_QUANTITY 1
+    #define ATOMIC_POV_QUANTITY 4
     
     #define i8 char
     #define i16 short int
