@@ -120,7 +120,7 @@ void genApovSpace(const char* const filename) {
         printf(progress);
         printf("\n");
         
-        u8 spin = 0;
+        u16 spin = 0;
         const u32 step = SPACE_ATOM_QUANTITY / 100;
         while(spin < Options::ATOMIC_POV_COUNT) {
             u32 i = 0;
@@ -140,13 +140,10 @@ void genApovSpace(const char* const filename) {
                         coordinates.y + depth * normalized.y,
                         coordinates.z + depth * normalized.z
                     };
-                    //printf("coordinates %f %f %f\n", coordinates.x,coordinates.y,coordinates.z);
                     const u32 offset = getOffset(&ray);
                     if(offset != u32max) {
                         if(space[offset] != 0) {
                             quanta = getQuantum(space[offset], (u8)depth);
-                            //atom.quanta[spin] = getQuantum(space[offset], (u8)depth);
-                            //apov[i].quanta[spin] = getQuantum(space[offset], (u8)depth);
                             break;
                         }
                     }
