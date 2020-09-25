@@ -9,6 +9,9 @@
     #include "./types.hpp"
     #include <cmath>
     
+    #define M_PI 3.14159265358979323846
+    #define _ang(x) ((float)M_PI/180.0f) * x
+    
     namespace math {
         template<typename T>
         T abs(const T);
@@ -27,7 +30,7 @@
         Vec4<float> getConjugate(const Vec4<float>);
         Vec4<float> mulQuat(const Vec4<float> qa, const Vec4<float> qb);
         Vec4<float> getSandwichProduct(const Vec4<float>, const Vec4<float>);
-        Vec4<float> getOrientedQuat(Vec2<float>);
-        Vec4<float> getReoriented(const Vec4<float>, const Vec2<float>);
+        Vec4<float> getOrientedQuat(const Vec4<float>);
+        Vec4<float> getReoriented(const Vec4<float>, const Vec4<float>);
     };
 #endif

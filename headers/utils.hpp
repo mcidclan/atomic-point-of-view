@@ -1,7 +1,7 @@
 #ifndef APOV_UTILS_HPP
 #define APOV_UTILS_HPP
 
-    #include "./types.hpp"
+    #include "./options.hpp"
 
     #define ENABLE_LOGS true
     #define log ENABLE_LOGS && printf

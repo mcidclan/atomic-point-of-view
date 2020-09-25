@@ -7,7 +7,7 @@ namespace math {
     }
     
     template i16 abs(const i16);
-
+    template float abs(const float);
 
     template<typename T>
     T getPower(T value) {
@@ -73,16 +73,18 @@ namespace math {
     Vec4<float> getSandwichProduct(const Vec4<float> v, const Vec4<float> q) {
         return mulQuat(mulQuat(q, v), getConjugate(q));
     }
-
-    Vec4<float> getOrientedQuat(Vec2<float> orientation) {
-        if(abs(orientation.y) > 1.0) {
-            orientation.y = orientation.y / abs(orientation.y);
-        }
-        orientation.y = 1.0 - orientation.y;
-        return getNormalized4({orientation.x, orientation.y, -1.0, 0.0});
+    
+    Vec4<float> getOrientedQuat(const Vec4<float> axis) {
+        float a = axis.w / 2.0;
+        return getNormalized4({
+            sinf(a) * axis.x,
+            sinf(a) * axis.y,
+            sinf(a) * axis.z,
+            cosf(a)
+        });
     }
 
-    Vec4<float> getReoriented(const Vec4<float> v, const Vec2<float> orientation) {        
+    Vec4<float> getReoriented(const Vec4<float> v, const Vec4<float> orientation) {        
         return getSandwichProduct(v, getOrientedQuat(orientation));
     }
 };

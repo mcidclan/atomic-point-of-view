@@ -29,7 +29,5 @@ namespace utils {
             fwrite((void*)data, sizeof(T), count, file);
             fclose(file);
         }
-    }
-    
-    template void genBinaryContent(const char* const, Atom* const, const u32);
+    }    
 }

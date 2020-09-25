@@ -1,6 +1,6 @@
 BIN = ./bin/
 EXE = apov.exe
-OBJS = main.o render.o math.o utils.o
+OBJS = options.o main.o render.o math.o utils.o
 OBJS := $(addprefix $(BIN), $(OBJS))
 
 CXFLAGS = -Wpadded -Wpacked -Wall -m32

@@ -2,9 +2,9 @@
 #define APOV_TYPES_HPP
 
     #include <cstdio>
-    
-    #define ATOMIC_POV_QUANTITY 4
-    
+    #include <cstring>
+    #include <string>
+        
     #define i8 char
     #define i16 short int
     #define i32 int
@@ -33,15 +33,5 @@
     struct Voxel {
         u32 color;
         Vec4<i16> coordinates;
-    };
-    
-    /*struct Quantum {
-        u32 depth;
-        u32 colors;
-    };*/
-    
-    struct Atom {
-        u32 quanta[ATOMIC_POV_QUANTITY];
-    };
-    
+    };    
 #endif
