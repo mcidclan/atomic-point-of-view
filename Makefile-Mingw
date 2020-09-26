@@ -3,7 +3,7 @@ EXE = apov.exe
 OBJS = options.o main.o math.o utils.o
 OBJS := $(addprefix $(BIN), $(OBJS))
 
-CXFLAGS = -Wpadded -Wpacked -Wall -m32
+CXFLAGS = -Wpadded -Wpacked -Wall
 LDFLAGS = -lstdc++
 
 all: $(BIN)$(EXE)
