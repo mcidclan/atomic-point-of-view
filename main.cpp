@@ -121,7 +121,7 @@ void genApovSpace(const char* const filename) {
         printf("\n");
         
         u16 spin = 0;
-        const u32 step = SPACE_ATOM_QUANTITY / 100;
+        const u32 step = SPACE_ATOM_QUANTITY / 100 / Options::RAY_STEP;
         while(spin < Options::ATOMIC_POV_COUNT) {
             u32 i = 0;
             while(i < SPACE_ATOM_QUANTITY) {
@@ -151,6 +151,13 @@ void genApovSpace(const char* const filename) {
                 }
                 fwrite((void*)&quanta, sizeof(u32), 1, file);
                 i++;
+                
+                if(Options::RAY_STEP > 1) {
+                    if(!(i % SPACE_2D_SIZE)) {
+                        i += (SPACE_2D_SIZE * (Options::RAY_STEP - 1));
+                    }
+                }
+                
             }
             spin++;
             printf(" | %d/%d\n", spin, Options::ATOMIC_POV_COUNT);
