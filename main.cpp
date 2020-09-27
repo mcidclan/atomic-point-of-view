@@ -6,8 +6,7 @@
 #include "./headers/math.hpp"
 #include "./headers/utils.hpp"
 
-static const float COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
-
+static float COLOR_DEPTH_STEP;
 static u16 SPACE_HALF_SIZE; 
 static u32 SPACE_2D_SIZE;
 static u32 SPACE_ATOM_QUANTITY;
@@ -16,10 +15,12 @@ static u16 SPACE_SIZE_POWER_VALUE_X2;
 static u32 SPACE_SIZE_DIGITS_X;
 static u32 SPACE_SIZE_DIGITS_Y;
 static u32 SPACE_SIZE_DIGITS_Z;
+static u32 ATOMIC_POV_COUNT;
 static u32* space;
 static Vec4<float>* spinAxis;
-    
+
 void init() {
+    COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
     SPACE_HALF_SIZE = Options::SPACE_SIZE / 2; 
     SPACE_2D_SIZE = (u32)pow(Options::SPACE_SIZE, 2);
     SPACE_ATOM_QUANTITY = (u32)pow(Options::SPACE_SIZE, 3);
@@ -31,12 +32,19 @@ void init() {
 
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
-    spinAxis = new Vec4<float>[Options::ATOMIC_POV_COUNT];
+    
+    ATOMIC_POV_COUNT = Options::CAM_HEMISPHERE ?
+    Options::ATOMIC_POV_COUNT / 2 : Options::ATOMIC_POV_COUNT;
+    spinAxis = new Vec4<float>[ATOMIC_POV_COUNT];
     
     u16 i = 0;
+    u16 id = 0;
     while(i < Options::ATOMIC_POV_COUNT) {
-        float spin = (float)(i*(360/Options::ATOMIC_POV_COUNT));
-        spinAxis[i] = {0.0f, 1.0f, 0.0f, _ang(spin)};
+        float spin = (float)(i * (360 / Options::ATOMIC_POV_COUNT));
+        if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
+            spinAxis[id] = {0.0f, 1.0f, 0.0f, _ang(spin)};
+            id++;
+        }
         i++;
     }
 }
@@ -104,7 +112,7 @@ void genApovSpace(const char* const filename) {
     if(file != NULL) {
         u16 spin = 0;
         const u32 step = SPACE_ATOM_QUANTITY / 100;
-        while(spin < Options::ATOMIC_POV_COUNT) {
+        while(spin < ATOMIC_POV_COUNT) {
             u32 i = 0;
             while(i < SPACE_ATOM_QUANTITY) {
                 if((i > 0) && (i % step == 0)) {
@@ -148,7 +156,7 @@ void genApovSpace(const char* const filename) {
             }
             spin++;
             printf("\r100%%");
-            printf(" | %d/%d\n", spin, Options::ATOMIC_POV_COUNT);
+            printf(" | %d/%d\n", spin, ATOMIC_POV_COUNT);
         }
         printf("\n");
         fclose(file);
