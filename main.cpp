@@ -115,27 +115,27 @@ u32 getQuantum(const u32 color, const u8 depth) {
 void genApovSpace(const char* const filename) {
     FILE* const file = fopen(filename, "wb");
     if(file != NULL) {
-        char progress[101] = {0};
-        memset(progress, '.', 100);
-        printf(progress);
-        printf("\n");
-        
         u16 spin = 0;
-        const u32 step = SPACE_ATOM_QUANTITY / 100 / Options::RAY_STEP;
+        const u32 step = SPACE_ATOM_QUANTITY / 100;
         while(spin < Options::ATOMIC_POV_COUNT) {
             u32 i = 0;
             while(i < SPACE_ATOM_QUANTITY) {
                 if((i > 0) && (i % step == 0)) {
-                    printf(".");
+                    printf("\r%u%%", i / step);
                 }
                 u32 quanta = 0;
                 float depth = 0.0f;
                 const Vec4<float> axis = spinAxis[spin];
-                const Vec4<float> coordinates = math::getReoriented(getCoordinates<float>(i), axis);
                 const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
+                Vec4<float> coordinates = math::getReoriented(getCoordinates<float>(i), axis);
+                
+                if(Options::FREE_CAM) {
+                    //
+                    coordinates.z -= Options::SPACE_SIZE;
+                }
                 
                 while(depth < MAX_RAY_DEPTH) {
-                    Vec3<float> ray = {
+                    const Vec3<float> ray = {
                         coordinates.x + depth * normalized.x,
                         coordinates.y + depth * normalized.y,
                         coordinates.z + depth * normalized.z
@@ -160,6 +160,7 @@ void genApovSpace(const char* const filename) {
                 
             }
             spin++;
+            printf("\r100%%");
             printf(" | %d/%d\n", spin, Options::ATOMIC_POV_COUNT);
         }
         printf("\n");

@@ -5,9 +5,10 @@
 
 #include "./headers/Options.hpp"
 
-u32 Options::SPACE_SIZE;
-u32 Options::ATOMIC_POV_COUNT;
-u32 Options::RAY_STEP;
+u32 Options::SPACE_SIZE = 128;
+u32 Options::ATOMIC_POV_COUNT = 360;
+u32 Options::RAY_STEP = 1;
+bool Options::FREE_CAM = false;
 
 void Options::process(int argc, char **argv)
 {
@@ -23,6 +24,9 @@ void Options::process(int argc, char **argv)
         } else if(name.find("ray-step:") == 0)
         {
             Options::RAY_STEP = std::stoi(name.substr(9));
+        } else if(name.find("free-cam") == 0)
+        {
+            Options::FREE_CAM = true;
         }
         i++;
     }
