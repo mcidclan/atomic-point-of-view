@@ -5,6 +5,7 @@
 
 #include "./headers/Options.hpp"
 
+u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::SPACE_SIZE = 128;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
@@ -24,6 +25,9 @@ void Options::process(int argc, char **argv)
         } else if(name.find("ray-step:") == 0)
         {
             Options::RAY_STEP = std::stoi(name.substr(9));
+        } else if(name.find("max-ray-depth:") == 0)
+        {
+            Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
         } else if(name.find("free-cam") == 0)
         {
             Options::FREE_CAM = true;

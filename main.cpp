@@ -6,9 +6,7 @@
 #include "./headers/math.hpp"
 #include "./headers/utils.hpp"
 
-//#define SPACE_SIZE 128
-#define MAX_RAY_DEPTH 64
-static const float COLOR_DEPTH_STEP = (1.0f/(float)MAX_RAY_DEPTH);
+static const float COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
 
 static u16 SPACE_HALF_SIZE; 
 static u32 SPACE_2D_SIZE;
@@ -34,17 +32,6 @@ void init() {
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
     spinAxis = new Vec4<float>[Options::ATOMIC_POV_COUNT];
-    
-    /* = {
-        {0.0f, 1.0f, 0.0f, _ang(0.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(45.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(90.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(135.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(180.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(225.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(270.0f)},
-        {0.0f, 1.0f, 0.0f, _ang(315.0f)}
-    };*/
     
     u16 i = 0;
     while(i < Options::ATOMIC_POV_COUNT) {
@@ -131,10 +118,10 @@ void genApovSpace(const char* const filename) {
                 
                 if(Options::FREE_CAM) {
                     //
-                    coordinates.z -= Options::SPACE_SIZE;
+                    coordinates.z -= Options::MAX_RAY_DEPTH;
                 }
                 
-                while(depth < MAX_RAY_DEPTH) {
+                while(depth < Options::MAX_RAY_DEPTH) {
                     const Vec3<float> ray = {
                         coordinates.x + depth * normalized.x,
                         coordinates.y + depth * normalized.y,

@@ -9,6 +9,7 @@
 
     class Options {
         public:
+        static u32 MAX_RAY_DEPTH;
         static u32 SPACE_SIZE;
         static u32 ATOMIC_POV_COUNT;
         static u32 RAY_STEP;
