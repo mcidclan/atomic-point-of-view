@@ -13,7 +13,7 @@
         static u32 SPACE_SIZE;
         static u32 ATOMIC_POV_COUNT;
         static u32 RAY_STEP;
-        static bool FREE_CAM;
+        static bool CAM_LOCKED;
         static bool CAM_HEMISPHERE;
         //
         static void process(int argc, char **argv);

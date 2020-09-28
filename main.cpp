@@ -124,7 +124,7 @@ void genApovSpace(const char* const filename) {
                 const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
                 Vec4<float> coordinates = math::getReoriented(getCoordinates<float>(i), axis);
                 
-                if(Options::FREE_CAM) {
+                if(!Options::CAM_LOCKED) {
                     //
                     coordinates.z -= Options::MAX_RAY_DEPTH;
                 }
