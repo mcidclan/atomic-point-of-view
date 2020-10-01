@@ -2,12 +2,12 @@
 ```
 Nom de code: APoV.
 
-APoV, standing for Atomic Point of View, is a variant of raytracing, proposing
-an alternative to it's realtime calculation cost. The main idea is to record
-the information for a ray, on different angles and from the point of view of each
-voxel, in space. This will produce huge amount of raw data, representing the 3d
-space in multiple point of views. The data could be then read or streamed,
-bringing the advantage of a fast rendering result.
+APoV, standing for Atomic Point of View, is a variant of voxel raytracing,
+proposing an alternative to its realtime calculation cost. The main idea is
+to record the information for a ray, on different angles and from the point of
+view of each voxel, in space. This will produce huge amount of raw data,
+representing the 3d space in multiple point of views. The data could be then
+read or streamed, bringing the advantage of a fast rendering result.
 
 The current generator records only 2 informations by ray, per space voxel. The
 RGB color of the scanned voxel, and the ray depth which is the length between
