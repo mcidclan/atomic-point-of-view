@@ -29,3 +29,6 @@ Or, for a free camera:
 For PSP generate the raw data with:
 ./bin/apov space-size:256 atomic-pov-count:36 \
     ray-step:8 max-ray-depth:256 cam-locked
+    
+### Available options
+max-ray-depth .......... Maximun length the ray can be while raytracing
