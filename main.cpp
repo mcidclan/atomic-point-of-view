@@ -133,17 +133,19 @@ void genApovSpace(const char* const filename) {
                 }
                 
                 while(depth < Options::MAX_RAY_DEPTH) {
-                    Vec3<float> ray = {
-                        coordinates.x + depth * normalized.x,
-                        coordinates.y + depth * normalized.y,
-                        coordinates.z + depth * normalized.z
-                    };
+                    Vec4<float> c = coordinates;
                     if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
                         const float scale = 1.0f + (depth * PROJECTION_FACTOR);
-                        ray.x *= scale;
-                        ray.y *= scale;
-                        ray.z *= scale;
+                        c.x *= scale;
+                        c.y *= scale;
+                        c.z *= scale;
                     }
+                    
+                    const Vec3<float> ray = {
+                        c.x + depth * normalized.x,
+                        c.y + depth * normalized.y,
+                        c.z + depth * normalized.z
+                    };
                     
                     const u32 offset = getOffset(&ray);
                     if(offset != u32max) {
