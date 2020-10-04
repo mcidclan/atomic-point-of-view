@@ -71,9 +71,9 @@ bool isContained(T* const coordinates) {
 template <typename T>
 u32 getOffset(T* const coordinates) {
     if(isContained(coordinates)) {
-        return (((i16)coordinates->x + SPACE_HALF_SIZE) |
-            (((i16)coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) |
-            (((i16)coordinates->z + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2));
+        return (((i16)coordinates->x + (SPACE_HALF_SIZE - 1)) |
+            (((i16)coordinates->y + (SPACE_HALF_SIZE - 1)) << SPACE_SIZE_POWER_VALUE) |
+            (((i16)coordinates->z + (SPACE_HALF_SIZE - 1)) << SPACE_SIZE_POWER_VALUE_X2));
     }
     return u32max;
 }

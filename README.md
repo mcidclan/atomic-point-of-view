@@ -31,4 +31,5 @@ For PSP generate the raw data with:
     ray-step:8 max-ray-depth:256 cam-locked
     
 ### Available options
-max-ray-depth .......... Maximun length the ray can be while raytracing
+max-ray-depth ........ Maximun length the ray can be while raytracing
+max-projection-depth . Enables a pre-rendered projection based on the given value
