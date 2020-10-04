@@ -7,6 +7,8 @@
 #include "./headers/utils.hpp"
 
 static float COLOR_DEPTH_STEP;
+static float PROJECTION_FACTOR;
+
 static u16 SPACE_HALF_SIZE; 
 static u32 SPACE_2D_SIZE;
 static u32 SPACE_ATOM_QUANTITY;
@@ -20,6 +22,7 @@ static u32* space;
 static Vec4<float>* spinAxis;
 
 void init() {
+    PROJECTION_FACTOR = 1.0f / Options::MAX_PROJECTION_DEPTH;
     COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
     SPACE_HALF_SIZE = Options::SPACE_SIZE / 2; 
     SPACE_2D_SIZE = (u32)pow(Options::SPACE_SIZE, 2);
@@ -130,11 +133,18 @@ void genApovSpace(const char* const filename) {
                 }
                 
                 while(depth < Options::MAX_RAY_DEPTH) {
-                    const Vec3<float> ray = {
+                    Vec3<float> ray = {
                         coordinates.x + depth * normalized.x,
                         coordinates.y + depth * normalized.y,
                         coordinates.z + depth * normalized.z
                     };
+                    if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
+                        const float scale = 1.0f + (depth * PROJECTION_FACTOR);
+                        ray.x *= scale;
+                        ray.y *= scale;
+                        ray.z *= scale;
+                    }
+                    
                     const u32 offset = getOffset(&ray);
                     if(offset != u32max) {
                         if(space[offset] != 0) {
