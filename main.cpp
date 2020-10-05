@@ -105,7 +105,7 @@ u32 getQuantum(const u32 color, const u8 depth) {
     const u32 r = darkness * ((color >> 24) & 0x000000FF);
     const u32 g = darkness * ((color >> 16) & 0x000000FF);
     const u32 b = darkness * ((color >> 8) & 0x000000FF);
-    return ((u32)depth) << 24) | (b << 16) | (g << 8) | r;
+    return (((u32)depth) << 24) | (b << 16) | (g << 8) | r;
 }
 
 void genApovSpace(const char* const filename) {
