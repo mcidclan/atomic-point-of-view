@@ -71,9 +71,9 @@ bool isContained(T* const coordinates) {
 template <typename T>
 u32 getOffset(T* const coordinates) {
     if(isContained(coordinates)) {
-        return (((i16)coordinates->x + (SPACE_HALF_SIZE - 1)) |
-            (((i16)coordinates->y + (SPACE_HALF_SIZE - 1)) << SPACE_SIZE_POWER_VALUE) |
-            (((i16)coordinates->z + (SPACE_HALF_SIZE - 1)) << SPACE_SIZE_POWER_VALUE_X2));
+        return (((i16)coordinates->x + SPACE_HALF_SIZE) |
+            (((i16)coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) |
+            (((i16)coordinates->z + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2));
     }
     return u32max;
 }
@@ -101,16 +101,15 @@ void fillSpace(Voxel* const voxels, const u32 quantity) {
 }
 
 u32 getQuantum(const u32 color, const u8 depth) {
-    const float darkness = 1.0f - depth * COLOR_DEPTH_STEP;    
-    return {
-        ((u32)(((color & 0xFF000000) >> 24) * darkness) << 24) |
-        ((u32)(((color & 0x00FF0000) >> 16) * darkness) << 16) |
-        ((u32)(((color & 0x0000FF00) >> 8) * darkness) << 8) |
-        depth
-    };
+    const float darkness = 1.0f - (COLOR_DEPTH_STEP * (float)depth);
+    const u32 r = darkness * ((color >> 24) & 0x000000FF);
+    const u32 g = darkness * ((color >> 16) & 0x000000FF);
+    const u32 b = darkness * ((color >> 8) & 0x000000FF);
+    return ((u32)depth) << 24) | (b << 16) | (g << 8) | r;
 }
 
 void genApovSpace(const char* const filename) {
+    //remove(filename);
     FILE* const file = fopen(filename, "wb");
     if(file != NULL) {
         u16 spin = 0;
@@ -148,7 +147,8 @@ void genApovSpace(const char* const filename) {
                     };
                     
                     const u32 offset = getOffset(&ray);
-                    if(offset != u32max) {
+                    
+                    if(offset != u32max) {  
                         if(space[offset] != 0) {
                             quanta = getQuantum(space[offset], (u8)depth);
                             break;
@@ -163,8 +163,7 @@ void genApovSpace(const char* const filename) {
                     if(!(i % SPACE_2D_SIZE)) {
                         i += (SPACE_2D_SIZE * (Options::RAY_STEP - 1));
                     }
-                }
-                
+                }  
             }
             spin++;
             printf("\r100%%");
@@ -178,27 +177,20 @@ void genApovSpace(const char* const filename) {
 int main(int argc, char** argv) {
     Options::process(argc, argv);
     init();
-        u32 size = 0;    
-        Voxel* voxels = utils::getBinaryContent<Voxel>("voxels.bin", &size);
-        
-        if(voxels == NULL) {
-            printf("File content is null");
-        }
-        
-        fillSpace(voxels, size);
-        delete [] voxels;
-        
-        // Test
-        Vec4<i16> coordinates = {-15,-48,-33, 0};
-        const u32 offset = getOffset(&coordinates);
-        if(offset != u32max) {
-            const u32 color = space[offset];
-            printf("Color: 0x%08x\n", color);
-        } else printf("!!!Out of space!!!");
-        //
-        
-        genApovSpace("atoms.bin");
-        printf("Generation done!\n");
+    
+    u32 size = 0;    
+    Voxel* voxels = utils::getBinaryContent<Voxel>("voxels.bin", &size);
+    
+    if(voxels == NULL) {
+        printf("File content is null");
+    }
+    
+    fillSpace(voxels, size);
+    delete [] voxels;
+    
+    genApovSpace("atoms.bin");
+    printf("Generation done!\n");
+    
     clean();
     return 0;
 }
