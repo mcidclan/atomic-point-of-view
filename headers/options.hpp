@@ -13,6 +13,7 @@
         static u32 SPACE_SIZE;
         static u32 ATOMIC_POV_COUNT;
         static u32 RAY_STEP;
+        static u32 PROJECTION_GAPS_REDUCER;
         static bool CAM_LOCKED;
         static bool CAM_HEMISPHERE;
         static float MAX_PROJECTION_DEPTH;

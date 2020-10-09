@@ -108,7 +108,37 @@ u32 getQuantum(const u32 color, const u8 depth) {
     return (((u32)depth) << 24) | (b << 16) | (g << 8) | r;
 }
 
+void applyAntiAliasing(u32* const frame) {
+    u32 x = Options::SPACE_SIZE - 1;
+    u32* _frame = new u32[SPACE_2D_SIZE];
+    while(--x) {
+        u32 y = Options::SPACE_SIZE - 1;
+        while(--y) {
+            const u32 i = x | y << SPACE_SIZE_POWER_VALUE;
+            const u32 o = frame[i];
+            const u32 a = frame[(x + 1) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+            const u32 b = frame[(x - 1) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+            const u32 c = frame[x | (y + 1) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+            const u32 d = frame[x | (y - 1) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+            if(o && (!a || !b || !c || !d)) {
+                const u8 r = (o & 0x00000FF) / 2;
+                const u8 g = ((o >> 8) & 0x00000FF) / 2;
+                const u8 b = ((o >> 16) & 0x00000FF) / 2;
+                _frame[i] = (o & 0xFF000000) | (b << 16) | (g << 8) | r;
+            } else _frame[i] = o;
+        }
+    }
+    memcpy(frame, _frame, SPACE_2D_SIZE * sizeof(u32));
+    delete [] _frame;
+}
+
+void applyFilters(u32* const frame) {
+    applyAntiAliasing(frame);
+}
+
 void genApovSpace(const char* const filename) {
+    const float MIN_SCALE_STEP = 1.0f / Options::SPACE_SIZE;
+    u32* frame = new u32[SPACE_2D_SIZE];
     //remove(filename);
     FILE* const file = fopen(filename, "wb");
     if(file != NULL) {
@@ -120,8 +150,7 @@ void genApovSpace(const char* const filename) {
                 if((i > 0) && (i % step == 0)) {
                     printf("\r%u%%", i / step);
                 }
-                u32 quanta = 0;
-                float depth = 0.0f;
+
                 const Vec4<float> axis = spinAxis[spin];
                 const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
                 Vec4<float> coordinates = math::getReoriented(getCoordinates<float>(i), axis);
@@ -131,40 +160,53 @@ void genApovSpace(const char* const filename) {
                     coordinates.z -= Options::MAX_RAY_DEPTH;
                 }
                 
+                u32 quanta = 0;
+                float depth = 0.0f;
                 while(depth < Options::MAX_RAY_DEPTH) {
-                    Vec4<float> c = coordinates;
-                    if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
-                        const float scale = 1.0f + (depth * PROJECTION_FACTOR);
-                        c.x *= scale;
-                        c.y *= scale;
-                        c.z *= scale;
-                    }
-                    
-                    const Vec3<float> ray = {
-                        c.x + depth * normalized.x,
-                        c.y + depth * normalized.y,
-                        c.z + depth * normalized.z
-                    };
-                    
-                    const u32 offset = getOffset(&ray);
-                    
-                    if(offset != u32max) {  
-                        if(space[offset] != 0) {
-                            quanta = getQuantum(space[offset], (u8)depth);
-                            break;
+                    u8 r = 0;
+                    static const int wraper[7] = {0, 1, -1, 2, -2, 3, -3};
+                    do {
+                        Vec4<float> c = coordinates;
+                        if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
+                            const float scale = 1.0f + (depth * PROJECTION_FACTOR);
+                            c.x *= scale + wraper[r] * MIN_SCALE_STEP;
+                            c.y *= scale + wraper[r] * MIN_SCALE_STEP;
+                            c.z *= scale + wraper[r] * MIN_SCALE_STEP;
                         }
-                    }
+                        
+                        const Vec3<float> ray = {
+                            c.x + depth * normalized.x,
+                            c.y + depth * normalized.y,
+                            c.z + depth * normalized.z 
+                        };
+                        
+                        const u32 offset = getOffset(&ray);
+                        
+                        if(offset != u32max) {
+                            if(space[offset] != 0) {
+                                quanta = getQuantum(space[offset], (u8)depth);
+                                goto write_quanta;
+                                //break;
+                            }
+                        }
+                    } while(r++ < Options::PROJECTION_GAPS_REDUCER);
                     depth++;
                 }
-                fwrite((void*)&quanta, sizeof(u32), 1, file);
-                i++;
-                
+                write_quanta:
+                const u32 fid = i % SPACE_2D_SIZE;
+                frame[fid] = quanta;
+                if(fid == SPACE_2D_SIZE - 1) {
+                    applyFilters(frame);
+                    fwrite(frame, sizeof(u32), SPACE_2D_SIZE, file);
+                }
+                i++; 
                 if(Options::RAY_STEP > 1) {
                     if(!(i % SPACE_2D_SIZE)) {
                         i += (SPACE_2D_SIZE * (Options::RAY_STEP - 1));
                     }
                 }  
             }
+            
             spin++;
             printf("\r100%%");
             printf(" | %d/%d\n", spin, ATOMIC_POV_COUNT);
@@ -172,6 +214,7 @@ void genApovSpace(const char* const filename) {
         printf("\n");
         fclose(file);
     }
+    delete [] frame;
 }
 
 int main(int argc, char** argv) {

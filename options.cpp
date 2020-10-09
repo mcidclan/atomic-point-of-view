@@ -9,6 +9,7 @@ u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::SPACE_SIZE = 128;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
+u32 Options::PROJECTION_GAPS_REDUCER = 0;
 bool Options::CAM_LOCKED = false;
 bool Options::CAM_HEMISPHERE = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
@@ -27,11 +28,20 @@ void Options::process(int argc, char **argv) {
             Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
         } else if(name.find("projection-depth:") == 0) {
             Options::MAX_PROJECTION_DEPTH = (float)std::stoi(name.substr(17));
+        } else if(name.find("projection-gaps-reducer:") == 0) {
+            Options::PROJECTION_GAPS_REDUCER = std::stoi(name.substr(24));
+            if(Options::PROJECTION_GAPS_REDUCER > 3) {
+                Options::PROJECTION_GAPS_REDUCER = 3;
+            }
         } else if(name.find("cam-locked") == 0) {
             Options::CAM_LOCKED = true;
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
         }
         i++;
+    }
+    
+    if(Options::PROJECTION_GAPS_REDUCER != 0) {
+        Options::PROJECTION_GAPS_REDUCER = 1 + Options::PROJECTION_GAPS_REDUCER * 2;
     }
 }
