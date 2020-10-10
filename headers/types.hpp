@@ -12,6 +12,7 @@
     #define u8 unsigned i8
     #define u16 unsigned i16
     #define u32 unsigned i32
+    #define u64 uint64_t
     
     #define u32max ((u32)-1)
     

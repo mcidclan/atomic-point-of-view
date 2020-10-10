@@ -5,6 +5,7 @@
 
 #include "./headers/Options.hpp"
 
+u8 Options::SPACE_BLOCK_COUNT = 1;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::SPACE_SIZE = 128;
 u32 Options::ATOMIC_POV_COUNT = 360;
@@ -27,6 +28,8 @@ void Options::process(int argc, char **argv) {
             Options::RAY_STEP = std::stoi(name.substr(9));
         } else if(name.find("max-ray-depth:") == 0) {
             Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
+        } else if(name.find("space-block-count:") == 0) {
+            Options::SPACE_BLOCK_COUNT = std::stoi(name.substr(18));
         } else if(name.find("projection-depth:") == 0) {
             Options::MAX_PROJECTION_DEPTH = (float)std::stoi(name.substr(17));
         } else if(name.find("projection-gaps-reducer:") == 0) {

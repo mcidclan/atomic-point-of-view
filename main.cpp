@@ -26,12 +26,12 @@ void init() {
     COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
     SPACE_HALF_SIZE = Options::SPACE_SIZE / 2; 
     SPACE_2D_SIZE = (u32)pow(Options::SPACE_SIZE, 2);
-    SPACE_ATOM_QUANTITY = (u32)pow(Options::SPACE_SIZE, 3);
+    SPACE_ATOM_QUANTITY = (u32)pow(Options::SPACE_SIZE, 3) * Options::SPACE_BLOCK_COUNT; //
     SPACE_SIZE_POWER_VALUE = math::getPower<u16>(Options::SPACE_SIZE);
     SPACE_SIZE_POWER_VALUE_X2 = SPACE_SIZE_POWER_VALUE * 2;
     SPACE_SIZE_DIGITS_X = Options::SPACE_SIZE - 1;
     SPACE_SIZE_DIGITS_Y = SPACE_SIZE_DIGITS_X << SPACE_SIZE_POWER_VALUE;
-    SPACE_SIZE_DIGITS_Z = SPACE_SIZE_DIGITS_X << SPACE_SIZE_POWER_VALUE_X2;
+    SPACE_SIZE_DIGITS_Z = (((u32)pow(Options::SPACE_SIZE, Options::SPACE_BLOCK_COUNT)) - 1) << SPACE_SIZE_POWER_VALUE_X2;
 
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
@@ -61,7 +61,7 @@ template <typename T>
 bool isContained(T* const coordinates) {
     if(math::abs(coordinates->x) < SPACE_HALF_SIZE &&
         math::abs(coordinates->y) < SPACE_HALF_SIZE &&
-        math::abs(coordinates->z) < SPACE_HALF_SIZE) {
+        math::abs(coordinates->z) < (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT)) {
         return true;
     }
     return false;
@@ -73,7 +73,7 @@ u32 getOffset(T* const coordinates) {
     if(isContained(coordinates)) {
         return (((i16)coordinates->x + SPACE_HALF_SIZE) |
             (((i16)coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) |
-            (((i16)coordinates->z + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2));
+            (((i16)coordinates->z + (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT)) << SPACE_SIZE_POWER_VALUE_X2));
     }
     return u32max;
 }
@@ -83,7 +83,7 @@ Vec4<T> getCoordinates(const u32 offset) {
     return {
         ((T)(offset & SPACE_SIZE_DIGITS_X)) - SPACE_HALF_SIZE,
         ((T)((offset & SPACE_SIZE_DIGITS_Y) >> SPACE_SIZE_POWER_VALUE)) - SPACE_HALF_SIZE,
-        ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_SIZE_POWER_VALUE_X2)) - SPACE_HALF_SIZE,
+        ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_SIZE_POWER_VALUE_X2)) - (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT),
         0
     };
 }
