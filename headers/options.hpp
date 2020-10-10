@@ -15,6 +15,7 @@
         static u32 RAY_STEP;
         static u32 PROJECTION_GAPS_REDUCER;
         static bool CAM_LOCKED;
+        static bool ANTI_ALIASING;
         static bool CAM_HEMISPHERE;
         static float MAX_PROJECTION_DEPTH;
         //

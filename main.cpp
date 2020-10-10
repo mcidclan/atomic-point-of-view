@@ -108,32 +108,128 @@ u32 getQuantum(const u32 color, const u8 depth) {
     return (((u32)depth) << 24) | (b << 16) | (g << 8) | r;
 }
 
-void applyAntiAliasing(u32* const frame) {
-    u32 x = Options::SPACE_SIZE - 1;
+/*static u32 divRGB(const u32 value, const float d) {
+    const u8 r = (value & 0x00000FF) / d;
+    const u8 g = ((value >> 8) & 0x00000FF) / d;
+    const u8 b = ((value >> 16) & 0x00000FF) / d;
+    return (value & 0xFF000000) | (b << 16) | (g << 8) | r;
+}
+
+static u32 aveRGB(const u32 v1, const u32 v2) {
+    const u8 r = ((v1 & 0x000000FF) + (v2 & 0x000000FF)) / 2;
+    const u8 g = (((v1 >> 8) & 0x000000FF) + ((v2 >> 8) & 0x000000FF)) / 2;
+    const u8 b = (((v1 >> 16) & 0x000000FF) + ((v2 >> 16) & 0x000000FF)) / 2;
+    return (v1 & 0xFF000000) | (b << 16) | (g << 8) | r;
+}*/
+
+static u8 lumRGB(const u32 value) {
+    const u8 r = (value & 0x00000FF);
+    const u8 g = ((value >> 8) & 0x00000FF);
+    const u8 b = ((value >> 16) & 0x00000FF);
+    return (r + g + b) / 3;
+}
+
+static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
+    const u8 s = 1; //size
+    const u8 r = 0; //rounded
+    const u8 m = 0; //mode 0, lite, full.
+    u32 x = Options::SPACE_SIZE - (s + 1);
+    while(--x > s) {
+        u32 y = Options::SPACE_SIZE - (s + 1);
+        while(--y > s) {
+            const u32 i = x | y << SPACE_SIZE_POWER_VALUE;
+            if(mask == NULL || mask[i]) {
+                const u32 o = src[i];
+                const u32 a = m ? src[(x + (s + r)) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
+                const u32 b = m ? src[(x - (s + r)) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
+                const u32 c = m ? src[x | (y + (s + r)) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
+                const u32 d = m ? src[x | (y - (s + r)) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
+                
+                const u32 e = src[(x + s) | (y + s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+                const u32 f = src[(x - s) | (y + s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+                const u32 g = src[(x + s) | (y - s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+                const u32 h = src[(x - s) | (y - s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+                
+                const u8 R = (
+                    (o & 0x000000FF) + (a & 0x000000FF) + (b & 0x000000FF) +
+                    (c & 0x000000FF) + (d & 0x000000FF) + (e & 0x000000FF) +
+                    (f & 0x000000FF) + (g & 0x000000FF) + (h & 0x000000FF)
+                ) / (m ? 9 : 5);
+                const u8 G = (
+                    ((o >> 8) & 0x000000FF) + ((a >> 8) & 0x000000FF) + ((b >> 8) & 0x000000FF) +
+                    ((c >> 8) & 0x000000FF) + ((d >> 8) & 0x000000FF) + ((e >> 8) & 0x000000FF) +
+                    ((f >> 8) & 0x000000FF) + ((g >> 8) & 0x000000FF) + ((h >> 8) & 0x000000FF)
+                ) / (m ? 9 : 5);
+                const u8 B = (
+                    ((o >> 16) & 0x000000FF) + ((a >> 16) & 0x000000FF) + ((b >> 16) & 0x000000FF) +
+                    ((c >> 16) & 0x000000FF) + ((d >> 16) & 0x000000FF) + ((e >> 16) & 0x000000FF) +
+                    ((f >> 16) & 0x000000FF) + ((g >> 16) & 0x000000FF) + ((h >> 16) & 0x000000FF)
+                ) / (m ? 9 : 5);
+                
+                dst[i] = (0xFF000000 & o) | (B << 16) | (G << 8) | R;
+            }
+        }
+    }
+}
+
+static void applyAntiAliasing(u32* const frame) {
+    const u8 threshold = 16;
     u32* _frame = new u32[SPACE_2D_SIZE];
+    u32* __frame = new u32[SPACE_2D_SIZE];
+    memset(_frame, 0, SPACE_2D_SIZE * sizeof(u32));
+    memset(__frame, 0, SPACE_2D_SIZE * sizeof(u32));
+
+    u32 x = Options::SPACE_SIZE - 1;
     while(--x) {
         u32 y = Options::SPACE_SIZE - 1;
         while(--y) {
             const u32 i = x | y << SPACE_SIZE_POWER_VALUE;
             const u32 o = frame[i];
-            const u32 a = frame[(x + 1) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-            const u32 b = frame[(x - 1) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-            const u32 c = frame[x | (y + 1) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-            const u32 d = frame[x | (y - 1) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-            if(o && (!a || !b || !c || !d)) {
-                const u8 r = (o & 0x00000FF) / 2;
-                const u8 g = ((o >> 8) & 0x00000FF) / 2;
-                const u8 b = ((o >> 16) & 0x00000FF) / 2;
-                _frame[i] = (o & 0xFF000000) | (b << 16) | (g << 8) | r;
-            } else _frame[i] = o;
+            
+            const u32 n[8] = {
+                (x + 1) | y << SPACE_SIZE_POWER_VALUE,
+                (x - 1) | y << SPACE_SIZE_POWER_VALUE,
+                x | (y + 1) << SPACE_SIZE_POWER_VALUE,
+                x | (y - 1) << SPACE_SIZE_POWER_VALUE,
+                
+                (x + 1) | (y + 1) << SPACE_SIZE_POWER_VALUE,
+                (x - 1) | (y + 1) << SPACE_SIZE_POWER_VALUE,
+                (x + 1) | (y - 1) << SPACE_SIZE_POWER_VALUE,
+                (x - 1) | (y - 1) << SPACE_SIZE_POWER_VALUE
+            };
+            
+            const u8 lumo = lumRGB(o);
+            const u8 a = math::abs<i16>(lumo - lumRGB(frame[n[0]])) > threshold;
+            const u8 b = math::abs<i16>(lumo - lumRGB(frame[n[1]])) > threshold;
+            const u8 c = math::abs<i16>(lumo - lumRGB(frame[n[2]])) > threshold;
+            const u8 d = math::abs<i16>(lumo - lumRGB(frame[n[3]])) > threshold;
+            
+            const u8 e = math::abs<i16>(lumo - lumRGB(frame[n[0]])) > threshold;
+            const u8 f = math::abs<i16>(lumo - lumRGB(frame[n[1]])) > threshold;
+            const u8 g = math::abs<i16>(lumo - lumRGB(frame[n[2]])) > threshold;
+            const u8 h = math::abs<i16>(lumo - lumRGB(frame[n[3]])) > threshold;
+            
+            if(o && (a || b || c || d || e || f || g || h)) {
+                _frame[i] = 0xFFFFFFFF;
+                u8 p = 8;
+                while(p--) {
+                    _frame[n[p]] = 0xFFFFFFFF;
+                }
+            }
         }
     }
-    memcpy(frame, _frame, SPACE_2D_SIZE * sizeof(u32));
+    
+    memcpy(__frame, frame, SPACE_2D_SIZE * sizeof(u32));
+    applyBlur(frame, __frame, _frame);
+
     delete [] _frame;
+    delete [] __frame;
 }
 
 void applyFilters(u32* const frame) {
-    applyAntiAliasing(frame);
+    if(Options::ANTI_ALIASING) {
+        applyAntiAliasing(frame);
+    }
 }
 
 void genApovSpace(const char* const filename) {

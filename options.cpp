@@ -11,6 +11,7 @@ u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
 bool Options::CAM_LOCKED = false;
+bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
 
@@ -37,6 +38,8 @@ void Options::process(int argc, char **argv) {
             Options::CAM_LOCKED = true;
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
+        } else if(name.find("anti-aliasing") == 0) {
+            Options::ANTI_ALIASING = true;
         }
         i++;
     }
