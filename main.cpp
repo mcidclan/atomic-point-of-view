@@ -239,7 +239,7 @@ void applyFilters(u32* const frame) {
 #define CLUT_B_OFFSET 36
 #define CLUT_COLOR_UNIT 42
 #define CLUT_COLOR_COUNT 216
-static const u32 clut[CLUT_COLOR_COUNT] = {0};
+static u32 clut[CLUT_COLOR_COUNT] = {0};
 u8 updateClut(const u32 value) {
     const u8 r = (value & 0x000000FF) / CLUT_COLOR_UNIT;
     const u8 g = ((value >> 8) & 0x000000FF) / CLUT_COLOR_UNIT;
@@ -254,19 +254,26 @@ u8 updateClut(const u32 value) {
         _r = (r + _r) / 2;
         _g = (g + _g) / 2;
         _b = (b + _b) / 2;
-        clut[i] = 0xFF000000 | (b << 16) | (g << 8) | r
+        clut[i] = 0xFF000000 | (b << 16) | (g << 8) | r;
     }
     return i;
 }
 
 void genApovSpace(const char* const filename) {
+    FILE* file = NULL;
+    FILE* clutfile = NULL;
+    u8* indexes = NULL;
+    
+    u32* const frame = new u32[SPACE_2D_SIZE];
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_SIZE;
-    u32* frame = new u32[SPACE_2D_SIZE];
-    //remove(filename);
+
     if(Options::USE_CLUT) {
-        static FILE* const cfile = fopen("clut-indexes.bin", "wb");
+        clutfile = fopen("clut-indexes.bin", "wb"); //
+        indexes = new u8[SPACE_2D_SIZE];
+    } else {
+        file = fopen("atoms.bin", "wb");
     }
-    FILE* const file = fopen("atoms.bin", "wb");
+    
     if(file != NULL) {
         u16 spin = 0;
         const u32 step = SPACE_ATOM_QUANTITY / 100;
@@ -321,22 +328,25 @@ void genApovSpace(const char* const filename) {
                 write_quanta:
                 const u32 fid = i % SPACE_2D_SIZE;
                 frame[fid] = quanta;
+                if(Options::USE_CLUT) {
+                    indexes[fid] = updateClut(quanta);
+                }
                 if(fid == SPACE_2D_SIZE - 1) {
                     applyFilters(frame);
-                    fwrite(frame, sizeof(u32), SPACE_2D_SIZE, file);
+                    if(Options::USE_CLUT) {
+                        fwrite(indexes, sizeof(u8), SPACE_2D_SIZE, clutfile);
+                    } else {
+                        fwrite(frame, sizeof(u32), SPACE_2D_SIZE, file);
+                    }
                 }
-                if(Options::USE_CLUT) {
-                    const u8 index = updateClut(quanta);
-                    fwrite(index, 1, 1, clutfile);
-                }
+                
                 i++;
                 if(Options::RAY_STEP > 1) {
                     if(!(i % SPACE_2D_SIZE)) {
                         i += (SPACE_2D_SIZE * (Options::RAY_STEP - 1));
                     }
                 }  
-            }
-            
+            } 
             spin++;
             printf("\r100%%");
             printf(" | %d/%d\n", spin, ATOMIC_POV_COUNT);
@@ -348,6 +358,7 @@ void genApovSpace(const char* const filename) {
             clutfile = fopen("clut.bin", "wb");
             fwrite(clut, sizeof(u32), CLUT_COLOR_COUNT, clutfile);            
             fclose(clutfile);
+            delete [] indexes;
         }
     }
     delete [] frame;
