@@ -29,6 +29,10 @@ void Options::process(int argc, char **argv) {
             Options::RAY_STEP = std::stoi(name.substr(9));
         } else if(name.find("max-ray-depth:") == 0) {
             Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
+            if(Options::MAX_RAY_DEPTH > 256) {
+                Options::MAX_RAY_DEPTH = 256;
+                printf("!!!max-ray-depth can't be greater than 255!!!\n");
+            }
         } else if(name.find("space-block-count:") == 0) {
             Options::SPACE_BLOCK_COUNT = std::stoi(name.substr(18));
         } else if(name.find("projection-depth:") == 0) {
