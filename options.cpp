@@ -5,13 +5,13 @@
 
 #include "./headers/Options.hpp"
 
+int Options::CAM_LOCK_AT = 0;
 u8 Options::SPACE_BLOCK_COUNT = 1;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::SPACE_SIZE = 128;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
-bool Options::CAM_LOCKED = false;
 bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
@@ -37,8 +37,8 @@ void Options::process(int argc, char **argv) {
             if(Options::PROJECTION_GAPS_REDUCER > 3) {
                 Options::PROJECTION_GAPS_REDUCER = 3;
             }
-        } else if(name.find("cam-locked") == 0) {
-            Options::CAM_LOCKED = true;
+        } else if(name.find("cam-lock-at:") == 0) {
+            Options::CAM_LOCK_AT = std::stoi(name.substr(12));
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
         } else if(name.find("anti-aliasing") == 0) {

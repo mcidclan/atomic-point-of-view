@@ -10,6 +10,7 @@ static float COLOR_DEPTH_STEP;
 static float PROJECTION_FACTOR;
 
 static u16 SPACE_HALF_SIZE; 
+static u16 SPACE_Z_HALF_SIZE; 
 static u32 SPACE_2D_SIZE;
 static u32 SPACE_ATOM_QUANTITY;
 static u16 SPACE_SIZE_POWER_VALUE;
@@ -25,6 +26,7 @@ void init() {
     PROJECTION_FACTOR = 1.0f / Options::MAX_PROJECTION_DEPTH;
     COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
     SPACE_HALF_SIZE = Options::SPACE_SIZE / 2; 
+    SPACE_Z_HALF_SIZE = (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT);
     SPACE_2D_SIZE = (u32)pow(Options::SPACE_SIZE, 2);
     SPACE_ATOM_QUANTITY = (u32)pow(Options::SPACE_SIZE, 3) * Options::SPACE_BLOCK_COUNT; //
     SPACE_SIZE_POWER_VALUE = math::getPower<u16>(Options::SPACE_SIZE);
@@ -61,7 +63,7 @@ template <typename T>
 bool isContained(T* const coordinates) {
     if(math::abs(coordinates->x) < SPACE_HALF_SIZE &&
         math::abs(coordinates->y) < SPACE_HALF_SIZE &&
-        math::abs(coordinates->z) < (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT)) {
+        math::abs(coordinates->z) < SPACE_Z_HALF_SIZE) {
         return true;
     }
     return false;
@@ -73,7 +75,7 @@ u32 getOffset(T* const coordinates) {
     if(isContained(coordinates)) {
         return (((i16)coordinates->x + SPACE_HALF_SIZE) |
             (((i16)coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) |
-            (((i16)coordinates->z + (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT)) << SPACE_SIZE_POWER_VALUE_X2));
+            (((i16)coordinates->z + SPACE_Z_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2));
     }
     return u32max;
 }
@@ -83,7 +85,7 @@ Vec4<T> getCoordinates(const u32 offset) {
     return {
         ((T)(offset & SPACE_SIZE_DIGITS_X)) - SPACE_HALF_SIZE,
         ((T)((offset & SPACE_SIZE_DIGITS_Y) >> SPACE_SIZE_POWER_VALUE)) - SPACE_HALF_SIZE,
-        ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_SIZE_POWER_VALUE_X2)) - (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT),
+        ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_SIZE_POWER_VALUE_X2)) - SPACE_Z_HALF_SIZE,
         0
     };
 }
@@ -232,11 +234,39 @@ void applyFilters(u32* const frame) {
     }
 }
 
+
+#define CLUT_G_OFFSET 6
+#define CLUT_B_OFFSET 36
+#define CLUT_COLOR_UNIT 42
+#define CLUT_COLOR_COUNT 216
+static const u32 clut[CLUT_COLOR_COUNT] = {0};
+u8 updateClut(const u32 value) {
+    const u8 r = (value & 0x000000FF) / CLUT_COLOR_UNIT;
+    const u8 g = ((value >> 8) & 0x000000FF) / CLUT_COLOR_UNIT;
+    const u8 b = ((value >> 24) & 0x000000FF) / CLUT_COLOR_UNIT;
+    u8 i = r + g * CLUT_G_OFFSET + b * CLUT_B_OFFSET;
+    if(!clut[i]) {
+        clut[i] = 0xFF000000 | value;
+    } else {
+        u8 _r = value & 0x000000FF;
+        u8 _g = (value >> 8) & 0x000000FF;
+        u8 _b = (value >> 24) & 0x000000FF;
+        _r = (r + _r) / 2;
+        _g = (g + _g) / 2;
+        _b = (b + _b) / 2;
+        clut[i] = 0xFF000000 | (b << 16) | (g << 8) | r
+    }
+    return i;
+}
+
 void genApovSpace(const char* const filename) {
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_SIZE;
     u32* frame = new u32[SPACE_2D_SIZE];
     //remove(filename);
-    FILE* const file = fopen(filename, "wb");
+    if(Options::USE_CLUT) {
+        static FILE* const cfile = fopen("clut-indexes.bin", "wb");
+    }
+    FILE* const file = fopen("atoms.bin", "wb");
     if(file != NULL) {
         u16 spin = 0;
         const u32 step = SPACE_ATOM_QUANTITY / 100;
@@ -251,9 +281,9 @@ void genApovSpace(const char* const filename) {
                 const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
                 Vec4<float> coordinates = math::getReoriented(getCoordinates<float>(i), axis);
                 
-                if(!Options::CAM_LOCKED) {
+                if(Options::CAM_LOCK_AT) {
                     //
-                    coordinates.z -= Options::MAX_RAY_DEPTH;
+                    coordinates.z += Options::CAM_LOCK_AT;
                 }
                 
                 u32 quanta = 0;
@@ -295,7 +325,11 @@ void genApovSpace(const char* const filename) {
                     applyFilters(frame);
                     fwrite(frame, sizeof(u32), SPACE_2D_SIZE, file);
                 }
-                i++; 
+                if(Options::USE_CLUT) {
+                    const u8 index = updateClut(quanta);
+                    fwrite(index, 1, 1, clutfile);
+                }
+                i++;
                 if(Options::RAY_STEP > 1) {
                     if(!(i % SPACE_2D_SIZE)) {
                         i += (SPACE_2D_SIZE * (Options::RAY_STEP - 1));
@@ -309,6 +343,12 @@ void genApovSpace(const char* const filename) {
         }
         printf("\n");
         fclose(file);
+        if(Options::USE_CLUT) {
+            fclose(clutfile);
+            clutfile = fopen("clut.bin", "wb");
+            fwrite(clut, sizeof(u32), CLUT_COLOR_COUNT, clutfile);            
+            fclose(clutfile);
+        }
     }
     delete [] frame;
 }
