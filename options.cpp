@@ -5,13 +5,14 @@
 
 #include "./headers/Options.hpp"
 
-int Options::CAM_LOCK_AT = 0;
 u8 Options::SPACE_BLOCK_COUNT = 1;
+u32 Options::CAM_LENGTH = 0;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::SPACE_SIZE = 128;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
+bool Options::CAM_LOCK = false;
 bool Options::USE_CLUT = false;
 bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
@@ -29,10 +30,6 @@ void Options::process(int argc, char **argv) {
             Options::RAY_STEP = std::stoi(name.substr(9));
         } else if(name.find("max-ray-depth:") == 0) {
             Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
-            if(Options::MAX_RAY_DEPTH > 256) {
-                Options::MAX_RAY_DEPTH = 256;
-                printf("!!!max-ray-depth can't be greater than 255!!!\n");
-            }
         } else if(name.find("space-block-count:") == 0) {
             Options::SPACE_BLOCK_COUNT = std::stoi(name.substr(18));
         } else if(name.find("projection-depth:") == 0) {
@@ -42,8 +39,10 @@ void Options::process(int argc, char **argv) {
             if(Options::PROJECTION_GAPS_REDUCER > 3) {
                 Options::PROJECTION_GAPS_REDUCER = 3;
             }
-        } else if(name.find("cam-lock-at:") == 0) {
-            Options::CAM_LOCK_AT = std::stoi(name.substr(12));
+        } else if(name.find("cam-length:") == 0) {
+            Options::CAM_LENGTH = std::stoi(name.substr(11));
+        } else if(name.find("cam-lock:") == 0) {
+            Options::CAM_LOCK = true;
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
         } else if(name.find("anti-aliasing") == 0) {
@@ -52,6 +51,10 @@ void Options::process(int argc, char **argv) {
         i++;
     }
     
+    if(Options::MAX_RAY_DEPTH > 256) {
+        printf("!!!max-ray-depth greater than 256!!!\n");
+    }
+            
     if(Options::PROJECTION_GAPS_REDUCER != 0) {
         Options::PROJECTION_GAPS_REDUCER = 1 + Options::PROJECTION_GAPS_REDUCER * 2;
     }

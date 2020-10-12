@@ -9,15 +9,13 @@
 static float COLOR_DEPTH_STEP;
 static float PROJECTION_FACTOR;
 
-static u16 SPACE_HALF_SIZE; 
-static u16 SPACE_Z_HALF_SIZE; 
 static u32 SPACE_2D_SIZE;
 static u32 SPACE_ATOM_QUANTITY;
-static u16 SPACE_SIZE_POWER_VALUE;
-static u16 SPACE_SIZE_POWER_VALUE_X2;
+
 static u32 SPACE_SIZE_DIGITS_X;
 static u32 SPACE_SIZE_DIGITS_Y;
 static u32 SPACE_SIZE_DIGITS_Z;
+
 static u32 ATOMIC_POV_COUNT;
 static u32* space;
 static Vec4<float>* spinAxis;
@@ -25,16 +23,26 @@ static Vec4<float>* spinAxis;
 void init() {
     PROJECTION_FACTOR = 1.0f / Options::MAX_PROJECTION_DEPTH;
     COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
-    SPACE_HALF_SIZE = Options::SPACE_SIZE / 2; 
-    SPACE_Z_HALF_SIZE = (SPACE_HALF_SIZE * Options::SPACE_BLOCK_COUNT);
-    SPACE_2D_SIZE = (u32)pow(Options::SPACE_SIZE, 2);
-    SPACE_ATOM_QUANTITY = (u32)pow(Options::SPACE_SIZE, 3) * Options::SPACE_BLOCK_COUNT; //
-    SPACE_SIZE_POWER_VALUE = math::getPower<u16>(Options::SPACE_SIZE);
-    SPACE_SIZE_POWER_VALUE_X2 = SPACE_SIZE_POWER_VALUE * 2;
-    SPACE_SIZE_DIGITS_X = Options::SPACE_SIZE - 1;
-    SPACE_SIZE_DIGITS_Y = SPACE_SIZE_DIGITS_X << SPACE_SIZE_POWER_VALUE;
-    SPACE_SIZE_DIGITS_Z = (((u32)pow(Options::SPACE_SIZE, Options::SPACE_BLOCK_COUNT)) - 1) << SPACE_SIZE_POWER_VALUE_X2;
 
+    SPACE_WIDTH = Options::SPACE_BLOCK_SIZE * Options::WIDTH_BLOCK_COUNT;
+    SPACE_HEIGHT = Options::SPACE_BLOCK_SIZE;
+    SPACE_DEPTH = Options::SPACE_BLOCK_SIZE * Options::DEPTH_BLOCK_COUNT;
+    
+    SPACE_HALF_WIDTH = SPACE_WIDTH / 2;
+    SPACE_HALF_HEIGHT = SPACE_HEIGHT / 2;
+    SPACE_HALF_DEPTH = SPACE_DEPTH / 2;
+    
+    SPACE_Y_BIT_OFFSET = math::getPower<u16>(SPACE_WIDTH);
+    SPACE_Z_BIT_OFFSET = SPACE_Y_BIT_OFFSET + math::getPower<u16>(SPACE_HEIGHT);
+
+    SPACE_SIZE_DIGITS_X = SPACE_WIDTH - 1;
+    SPACE_SIZE_DIGITS_Y = (SPACE_HEIGHT - 1) << SPACE_Y_BIT_OFFSET;
+    SPACE_SIZE_DIGITS_Z = (SPACE_DEPTH - 1) << SPACE_Z_BIT_OFFSET;
+
+    FRAME_SIZE = SPACE_WIDTH * SPACE_HEIGHT;
+    SPACE_ATOM_QUANTITY = (SPACE_WIDTH * WIDTH_BLOCK_COUNT) *
+    SPACE_HEIGHT * (SPACE_DEPTH * DEPTH_BLOCK_COUNT);
+    
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
     
@@ -61,21 +69,27 @@ void clean() {
 
 template <typename T>
 bool isContained(T* const coordinates) {
-    if(math::abs(coordinates->x) < SPACE_HALF_SIZE &&
-        math::abs(coordinates->y) < SPACE_HALF_SIZE &&
-        math::abs(coordinates->z) < SPACE_Z_HALF_SIZE) {
+    if(math::abs(coordinates->x) < SPACE_HALF_WIDTH &&
+        math::abs(coordinates->y) < SPACE_HALF_HEIGHT &&
+        math::abs(coordinates->z) < SPACE_HALF_DEPTH) {
         return true;
     }
     return false;
 }
 
+//SPACE_HALF_WIDTH
+//SPACE_HALF_HEIGHT
+//SPACE_HALF_DEPTH
+//SPACE_Y_BIT_OFFSET
+//SPACE_Z_BIT_OFFSET
+
 //
 template <typename T>
 u32 getOffset(T* const coordinates) {
     if(isContained(coordinates)) {
-        return (((i16)coordinates->x + SPACE_HALF_SIZE) |
-            (((i16)coordinates->y + SPACE_HALF_SIZE) << SPACE_SIZE_POWER_VALUE) |
-            (((i16)coordinates->z + SPACE_Z_HALF_SIZE) << SPACE_SIZE_POWER_VALUE_X2));
+        return (((i16)coordinates->x + SPACE_HALF_WIDTH) |
+            (((i16)coordinates->y + SPACE_HALF_HEIGHT) << SPACE_Y_BIT_OFFSET) |
+            (((i16)coordinates->z + SPACE_HALF_DEPTH) << SPACE_Z_BIT_OFFSET));
     }
     return u32max;
 }
@@ -84,8 +98,8 @@ template<typename T>
 Vec4<T> getCoordinates(const u32 offset) {
     return {
         ((T)(offset & SPACE_SIZE_DIGITS_X)) - SPACE_HALF_SIZE,
-        ((T)((offset & SPACE_SIZE_DIGITS_Y) >> SPACE_SIZE_POWER_VALUE)) - SPACE_HALF_SIZE,
-        ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_SIZE_POWER_VALUE_X2)) - SPACE_Z_HALF_SIZE,
+        ((T)((offset & SPACE_SIZE_DIGITS_Y) >> SPACE_Y_BIT_OFFSET)) - SPACE_HALF_HEIGHT,
+        ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_Z_BIT_OFFSET)) - SPACE_HALF_DEPTH,
         0
     };
 }
@@ -102,12 +116,13 @@ void fillSpace(Voxel* const voxels, const u32 quantity) {
     }
 }
 
-u32 getQuantum(const u32 color, const u8 depth) {
-    const float darkness = 1.0f - (COLOR_DEPTH_STEP * (float)depth);
-    const u32 r = darkness * ((color >> 24) & 0x000000FF);
-    const u32 g = darkness * ((color >> 16) & 0x000000FF);
-    const u32 b = darkness * ((color >> 8) & 0x000000FF);
-    return (((u32)depth) << 24) | (b << 16) | (g << 8) | r;
+u32 getQuantum(const u32 color, const float depth) {
+    const float darkness = 1.0f - (COLOR_DEPTH_STEP * depth);
+    const u8 r = darkness * ((color >> 24) & 0x000000FF);
+    const u8 g = darkness * ((color >> 16) & 0x000000FF);
+    const u8 b = darkness * ((color >> 8) & 0x000000FF);
+    const u8 d = depth > 255.0f ? 255 : (u8)depth;
+    return (d << 24) | (b << 16) | (g << 8) | r;
 }
 
 /*static u32 divRGB(const u32 value, const float d) {
@@ -259,7 +274,7 @@ u8 updateClut(const u32 value) {
     return i;
 }
 
-void genApovSpace(const char* const filename) {
+void genApovSpace() {
     FILE* file = NULL;
     FILE* clutfile = NULL;
     u8* indexes = NULL;
@@ -287,17 +302,18 @@ void genApovSpace(const char* const filename) {
                 const Vec4<float> axis = spinAxis[spin];
                 const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
                 Vec4<float> coordinates = getCoordinates<float>(i);
-                if(Options::CAM_LOCK_AT) {
-                    coordinates.z += Options::CAM_LOCK_AT;
+                
+                if(Options::CAM_LOCK) {
+                    coordinates = math::getReoriented(coordinates, axis);
                 }
-                coordinates = math::getReoriented(coordinates, axis);
-                if(Options::CAM_LOCK_AT) {
-                    coordinates.z -= Options::CAM_LOCK_AT;
+                if(Options::CAM_LENGTH) {
+                    coordinates.z -= Options::CAM_LENGTH;
                 }
+                
                 u32 quanta = 0;
                 float depth = 0.0f;
                 while(depth < Options::MAX_RAY_DEPTH) {
-                    u8 r = 0;
+                    u8 r = 0; //Todo
                     static const int wraper[7] = {0, 1, -1, 2, -2, 3, -3};
                     do {
                         Vec4<float> c = coordinates;
@@ -308,17 +324,20 @@ void genApovSpace(const char* const filename) {
                             c.z *= scale + wraper[r] * MIN_SCALE_STEP;
                         }
                         
-                        const Vec3<float> ray = {
+                        Vec3<float> ray = {
                             c.x + depth * normalized.x,
                             c.y + depth * normalized.y,
                             c.z + depth * normalized.z 
                         };
-                        
+                        //
+                        /*if(Options::CAM_LENGTH) {
+                            ray.z += Options::CAM_LENGTH;
+                        }*/
                         const u32 offset = getOffset(&ray);
                         
                         if(offset != u32max) {
                             if(space[offset] != 0) {
-                                quanta = getQuantum(space[offset], (u8)depth);
+                                quanta = getQuantum(space[offset], depth);
                                 goto write_quanta;
                                 //break;
                             }
@@ -379,7 +398,7 @@ int main(int argc, char** argv) {
     fillSpace(voxels, size);
     delete [] voxels;
     
-    genApovSpace("atoms.bin");
+    genApovSpace();
     printf("Generation done!\n");
     
     clean();
