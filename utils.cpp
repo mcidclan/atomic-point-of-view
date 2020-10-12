@@ -7,7 +7,7 @@ namespace utils {
         if(file != NULL) {
             fseek(file, 0, SEEK_END);
             *size = ftell(file) / sizeof(T);
-            log("%s contents %u elements with a size of %u.\n",
+            log("%s contains %u elements with a size of %u.\n",
             filename, *size, sizeof(T));
             if(*size > 0) {
                 T* const content = new T[*size];

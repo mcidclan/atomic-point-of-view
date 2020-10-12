@@ -9,10 +9,11 @@
 
     class Options {
         public:
-        static u8 SPACE_BLOCK_COUNT;
+        static u8 WIDTH_BLOCK_COUNT;
+        static u8 DEPTH_BLOCK_COUNT;
+        static u16 SPACE_BLOCK_SIZE;
         static u32 CAM_LENGTH;
         static u32 MAX_RAY_DEPTH;
-        static u32 SPACE_SIZE;
         static u32 ATOMIC_POV_COUNT;
         static u32 RAY_STEP;
         static u32 PROJECTION_GAPS_REDUCER;

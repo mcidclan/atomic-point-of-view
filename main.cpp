@@ -8,14 +8,19 @@
 
 static float COLOR_DEPTH_STEP;
 static float PROJECTION_FACTOR;
-
-static u32 SPACE_2D_SIZE;
-static u32 SPACE_ATOM_QUANTITY;
-
+static u8 SPACE_Y_BIT_OFFSET;
+static u8 SPACE_Z_BIT_OFFSET;
+static u16 SPACE_WIDTH;
+static u16 SPACE_HEIGHT;
+static u16 SPACE_DEPTH;
+static u16 SPACE_HALF_WIDTH;
+static u16 SPACE_HALF_HEIGHT;
+static u16 SPACE_HALF_DEPTH;
 static u32 SPACE_SIZE_DIGITS_X;
 static u32 SPACE_SIZE_DIGITS_Y;
 static u32 SPACE_SIZE_DIGITS_Z;
-
+static u32 SPACE_ATOM_QUANTITY;
+static u32 FRAME_SIZE;
 static u32 ATOMIC_POV_COUNT;
 static u32* space;
 static Vec4<float>* spinAxis;
@@ -40,16 +45,17 @@ void init() {
     SPACE_SIZE_DIGITS_Z = (SPACE_DEPTH - 1) << SPACE_Z_BIT_OFFSET;
 
     FRAME_SIZE = SPACE_WIDTH * SPACE_HEIGHT;
-    SPACE_ATOM_QUANTITY = (SPACE_WIDTH * WIDTH_BLOCK_COUNT) *
-    SPACE_HEIGHT * (SPACE_DEPTH * DEPTH_BLOCK_COUNT);
+    SPACE_ATOM_QUANTITY = SPACE_WIDTH * SPACE_HEIGHT * SPACE_DEPTH;
+    
+    printf("Atom quantity: %u\n", SPACE_ATOM_QUANTITY);
     
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
-    
+        
     ATOMIC_POV_COUNT = Options::CAM_HEMISPHERE ?
     Options::ATOMIC_POV_COUNT / 2 : Options::ATOMIC_POV_COUNT;
     spinAxis = new Vec4<float>[ATOMIC_POV_COUNT];
-    
+        
     u16 i = 0;
     u16 id = 0;
     while(i < Options::ATOMIC_POV_COUNT) {
@@ -59,12 +65,12 @@ void init() {
             id++;
         }
         i++;
-    }
+    }    
 }
 
 void clean() {
     delete [] space;
-    delete [] spinAxis;    
+    delete [] spinAxis;
 }
 
 template <typename T>
@@ -77,13 +83,6 @@ bool isContained(T* const coordinates) {
     return false;
 }
 
-//SPACE_HALF_WIDTH
-//SPACE_HALF_HEIGHT
-//SPACE_HALF_DEPTH
-//SPACE_Y_BIT_OFFSET
-//SPACE_Z_BIT_OFFSET
-
-//
 template <typename T>
 u32 getOffset(T* const coordinates) {
     if(isContained(coordinates)) {
@@ -97,7 +96,7 @@ u32 getOffset(T* const coordinates) {
 template<typename T>
 Vec4<T> getCoordinates(const u32 offset) {
     return {
-        ((T)(offset & SPACE_SIZE_DIGITS_X)) - SPACE_HALF_SIZE,
+        ((T)(offset & SPACE_SIZE_DIGITS_X)) - SPACE_HALF_WIDTH,
         ((T)((offset & SPACE_SIZE_DIGITS_Y) >> SPACE_Y_BIT_OFFSET)) - SPACE_HALF_HEIGHT,
         ((T)((offset & SPACE_SIZE_DIGITS_Z) >> SPACE_Z_BIT_OFFSET)) - SPACE_HALF_DEPTH,
         0
@@ -105,7 +104,7 @@ Vec4<T> getCoordinates(const u32 offset) {
 }
 
 void fillSpace(Voxel* const voxels, const u32 quantity) {
-    printf("Starts filling space\n");
+    printf("Starts filling space...\n");
     u32 i = quantity;
     while(i--) {
         Voxel* const voxel = &voxels[i];
@@ -114,6 +113,7 @@ void fillSpace(Voxel* const voxels, const u32 quantity) {
             space[offset] = voxel->color;
         }
     }
+    printf("Space filled.\n");
 }
 
 u32 getQuantum(const u32 color, const float depth) {
@@ -124,20 +124,6 @@ u32 getQuantum(const u32 color, const float depth) {
     const u8 d = depth > 255.0f ? 255 : (u8)depth;
     return (d << 24) | (b << 16) | (g << 8) | r;
 }
-
-/*static u32 divRGB(const u32 value, const float d) {
-    const u8 r = (value & 0x00000FF) / d;
-    const u8 g = ((value >> 8) & 0x00000FF) / d;
-    const u8 b = ((value >> 16) & 0x00000FF) / d;
-    return (value & 0xFF000000) | (b << 16) | (g << 8) | r;
-}
-
-static u32 aveRGB(const u32 v1, const u32 v2) {
-    const u8 r = ((v1 & 0x000000FF) + (v2 & 0x000000FF)) / 2;
-    const u8 g = (((v1 >> 8) & 0x000000FF) + ((v2 >> 8) & 0x000000FF)) / 2;
-    const u8 b = (((v1 >> 16) & 0x000000FF) + ((v2 >> 16) & 0x000000FF)) / 2;
-    return (v1 & 0xFF000000) | (b << 16) | (g << 8) | r;
-}*/
 
 static u8 lumRGB(const u32 value) {
     const u8 r = (value & 0x00000FF);
@@ -150,22 +136,22 @@ static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
     const u8 s = 1; //size
     const u8 r = 0; //rounded
     const u8 m = 0; //mode 0, lite, full.
-    u32 x = Options::SPACE_SIZE - (s + 1);
+    u32 x = SPACE_WIDTH - (s + 1);
     while(--x > s) {
-        u32 y = Options::SPACE_SIZE - (s + 1);
+        u32 y = SPACE_HEIGHT - (s + 1);
         while(--y > s) {
-            const u32 i = x | y << SPACE_SIZE_POWER_VALUE;
+            const u32 i = x | y << SPACE_Y_BIT_OFFSET;
             if(mask == NULL || mask[i]) {
                 const u32 o = src[i];
-                const u32 a = m ? src[(x + (s + r)) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
-                const u32 b = m ? src[(x - (s + r)) | y << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
-                const u32 c = m ? src[x | (y + (s + r)) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
-                const u32 d = m ? src[x | (y - (s + r)) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF : 0;
+                const u32 a = m ? src[(x + (s + r)) | y << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF : 0;
+                const u32 b = m ? src[(x - (s + r)) | y << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF : 0;
+                const u32 c = m ? src[x | (y + (s + r)) << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF : 0;
+                const u32 d = m ? src[x | (y - (s + r)) << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF : 0;
                 
-                const u32 e = src[(x + s) | (y + s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-                const u32 f = src[(x - s) | (y + s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-                const u32 g = src[(x + s) | (y - s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
-                const u32 h = src[(x - s) | (y - s) << SPACE_SIZE_POWER_VALUE] & 0x00FFFFFF;
+                const u32 e = src[(x + s) | (y + s) << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF;
+                const u32 f = src[(x - s) | (y + s) << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF;
+                const u32 g = src[(x + s) | (y - s) << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF;
+                const u32 h = src[(x - s) | (y - s) << SPACE_Y_BIT_OFFSET] & 0x00FFFFFF;
                 
                 const u8 R = (
                     (o & 0x000000FF) + (a & 0x000000FF) + (b & 0x000000FF) +
@@ -191,28 +177,28 @@ static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
 
 static void applyAntiAliasing(u32* const frame) {
     const u8 threshold = 16;
-    u32* _frame = new u32[SPACE_2D_SIZE];
-    u32* __frame = new u32[SPACE_2D_SIZE];
-    memset(_frame, 0, SPACE_2D_SIZE * sizeof(u32));
-    memset(__frame, 0, SPACE_2D_SIZE * sizeof(u32));
+    u32* _frame = new u32[FRAME_SIZE];
+    u32* __frame = new u32[FRAME_SIZE];
+    memset(_frame, 0, FRAME_SIZE * sizeof(u32));
+    memset(__frame, 0, FRAME_SIZE * sizeof(u32));
 
-    u32 x = Options::SPACE_SIZE - 1;
+    u32 x = SPACE_WIDTH - 1;
     while(--x) {
-        u32 y = Options::SPACE_SIZE - 1;
+        u32 y = SPACE_HEIGHT - 1;
         while(--y) {
-            const u32 i = x | y << SPACE_SIZE_POWER_VALUE;
+            const u32 i = x | y << SPACE_Y_BIT_OFFSET;
             const u32 o = frame[i];
             
             const u32 n[8] = {
-                (x + 1) | y << SPACE_SIZE_POWER_VALUE,
-                (x - 1) | y << SPACE_SIZE_POWER_VALUE,
-                x | (y + 1) << SPACE_SIZE_POWER_VALUE,
-                x | (y - 1) << SPACE_SIZE_POWER_VALUE,
+                (x + 1) | y << SPACE_Y_BIT_OFFSET,
+                (x - 1) | y << SPACE_Y_BIT_OFFSET,
+                x | (y + 1) << SPACE_Y_BIT_OFFSET,
+                x | (y - 1) << SPACE_Y_BIT_OFFSET,
                 
-                (x + 1) | (y + 1) << SPACE_SIZE_POWER_VALUE,
-                (x - 1) | (y + 1) << SPACE_SIZE_POWER_VALUE,
-                (x + 1) | (y - 1) << SPACE_SIZE_POWER_VALUE,
-                (x - 1) | (y - 1) << SPACE_SIZE_POWER_VALUE
+                (x + 1) | (y + 1) << SPACE_Y_BIT_OFFSET,
+                (x - 1) | (y + 1) << SPACE_Y_BIT_OFFSET,
+                (x + 1) | (y - 1) << SPACE_Y_BIT_OFFSET,
+                (x - 1) | (y - 1) << SPACE_Y_BIT_OFFSET
             };
             
             const u8 lumo = lumRGB(o);
@@ -236,7 +222,7 @@ static void applyAntiAliasing(u32* const frame) {
         }
     }
     
-    memcpy(__frame, frame, SPACE_2D_SIZE * sizeof(u32));
+    memcpy(__frame, frame, FRAME_SIZE * sizeof(u32));
     applyBlur(frame, __frame, _frame);
 
     delete [] _frame;
@@ -275,16 +261,17 @@ u8 updateClut(const u32 value) {
 }
 
 void genApovSpace() {
+    printf("Starts generating APoV region...\n");
     FILE* file = NULL;
     FILE* clutfile = NULL;
     u8* indexes = NULL;
     
-    u32* const frame = new u32[SPACE_2D_SIZE];
-    const float MIN_SCALE_STEP = 1.0f / Options::SPACE_SIZE;
+    u32* const frame = new u32[FRAME_SIZE];
+    const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
 
     if(Options::USE_CLUT) {
         clutfile = fopen("clut-indexes.bin", "wb"); //
-        indexes = new u8[SPACE_2D_SIZE];
+        indexes = new u8[FRAME_SIZE];
     } else {
         file = fopen("atoms.bin", "wb");
     }
@@ -339,31 +326,30 @@ void genApovSpace() {
                             if(space[offset] != 0) {
                                 quanta = getQuantum(space[offset], depth);
                                 goto write_quanta;
-                                //break;
                             }
                         }
                     } while(r++ < Options::PROJECTION_GAPS_REDUCER);
                     depth++;
                 }
                 write_quanta:
-                const u32 fid = i % SPACE_2D_SIZE;
+                const u32 fid = i % FRAME_SIZE;
                 frame[fid] = quanta;
                 if(Options::USE_CLUT) {
                     indexes[fid] = updateClut(quanta);
                 }
-                if(fid == SPACE_2D_SIZE - 1) {
+                if(fid == FRAME_SIZE - 1) {
                     applyFilters(frame);
                     if(Options::USE_CLUT) {
-                        fwrite(indexes, sizeof(u8), SPACE_2D_SIZE, clutfile);
+                        fwrite(indexes, sizeof(u8), FRAME_SIZE, clutfile);
                     } else {
-                        fwrite(frame, sizeof(u32), SPACE_2D_SIZE, file);
+                        fwrite(frame, sizeof(u32), FRAME_SIZE, file);
                     }
                 }
                 
                 i++;
                 if(Options::RAY_STEP > 1) {
-                    if(!(i % SPACE_2D_SIZE)) {
-                        i += (SPACE_2D_SIZE * (Options::RAY_STEP - 1));
+                    if(!(i % FRAME_SIZE)) {
+                        i += (FRAME_SIZE * (Options::RAY_STEP - 1));
                     }
                 }  
             } 
@@ -382,13 +368,14 @@ void genApovSpace() {
         }
     }
     delete [] frame;
+    printf("Generation done!\n");
 }
 
 int main(int argc, char** argv) {
     Options::process(argc, argv);
     init();
     
-    u32 size = 0;    
+    u32 size = 0;
     Voxel* voxels = utils::getBinaryContent<Voxel>("voxels.bin", &size);
     
     if(voxels == NULL) {
@@ -399,7 +386,6 @@ int main(int argc, char** argv) {
     delete [] voxels;
     
     genApovSpace();
-    printf("Generation done!\n");
     
     clean();
     return 0;
