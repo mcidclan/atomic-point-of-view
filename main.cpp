@@ -295,8 +295,8 @@ void genApovSpace() {
                 if(Options::CAM_LOCK) {
                     coordinates = math::getReoriented(coordinates, axis);
                 }
-                if(Options::CAM_LENGTH) {
-                    coordinates.z -= Options::CAM_LENGTH;
+                if(Options::CAM_DISTANCE) {
+                    coordinates.z -= Options::CAM_DISTANCE;
                 }
                 
                 u32 quanta = 0;
@@ -318,10 +318,7 @@ void genApovSpace() {
                             c.y + depth * normalized.y,
                             c.z + depth * normalized.z 
                         };
-                        //
-                        /*if(Options::CAM_LENGTH) {
-                            ray.z += Options::CAM_LENGTH;
-                        }*/
+                        
                         const u32 offset = getOffset(&ray);
                         
                         if(offset != u32max) {

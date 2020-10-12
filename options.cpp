@@ -8,7 +8,7 @@
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
-u32 Options::CAM_LENGTH = 0;
+u32 Options::CAM_DISTANCE = 0;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
@@ -42,8 +42,8 @@ void Options::process(int argc, char **argv) {
             if(Options::PROJECTION_GAPS_REDUCER > 3) {
                 Options::PROJECTION_GAPS_REDUCER = 3;
             }
-        } else if(name.find("cam-length:") == 0) {
-            Options::CAM_LENGTH = std::stoi(name.substr(11));
+        } else if(name.find("cam-distance:") == 0) {
+            Options::CAM_DISTANCE = std::stoi(name.substr(13));
         } else if(name.find("cam-lock:") == 0) {
             Options::CAM_LOCK = true;
         } else if(name.find("cam-hemisphere") == 0) {
