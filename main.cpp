@@ -278,12 +278,14 @@ void genApovSpace() {
     
     if(file != NULL) {
         u16 spin = 0;
-        const u32 step = SPACE_ATOM_QUANTITY / 100;
+        const float step = 100.0f / SPACE_ATOM_QUANTITY ;
         while(spin < ATOMIC_POV_COUNT) {
             u32 i = 0;
+            u8 percent = 0;
             while(i < SPACE_ATOM_QUANTITY) {
-                if((i > 0) && (i % step == 0)) {
-                    printf("\r%u%%", i / step);
+                if((u8)(i * step) > percent) {
+                    percent++;
+                    printf("\r%u%%", percent);
                 }
 
                 const Vec4<float> axis = spinAxis[spin];
@@ -386,7 +388,7 @@ int main(int argc, char** argv) {
     delete [] voxels;
     
     genApovSpace();
-    
+    rename("atoms.bin", "atoms-done.bin");
     clean();
     return 0;
 }
