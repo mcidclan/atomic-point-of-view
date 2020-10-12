@@ -9,6 +9,7 @@
 
     class Options {
         public:
+        static u8 GENERATOR_TYPE;
         static u8 WIDTH_BLOCK_COUNT;
         static u8 DEPTH_BLOCK_COUNT;
         static u16 SPACE_BLOCK_SIZE;

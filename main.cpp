@@ -260,7 +260,7 @@ u8 updateClut(const u32 value) {
     return i;
 }
 
-void genApovSpace() {
+void genAPoVSpace() {
     printf("Starts generating APoV region...\n");
     FILE* file = NULL;
     FILE* clutfile = NULL;
@@ -370,6 +370,22 @@ void genApovSpace() {
     printf("Generation done!\n");
 }
 
+// Volume mode APoV generation
+// Point of views within the volume described by w, h and d.
+void genVolumePoV() {
+}
+
+// Surface mode APoV generation
+// Point of views over the surface described by w and h.
+void genSurfacePoV() {
+}
+
+// Path mode APoV generation
+// Point of views along the path described by d.
+void genPathPoV() {
+    genAPoVSpace();
+}
+
 int main(int argc, char** argv) {
     Options::process(argc, argv);
     init();
@@ -384,7 +400,18 @@ int main(int argc, char** argv) {
     fillSpace(voxels, size);
     delete [] voxels;
     
-    genApovSpace();
+    switch(Options::GENERATOR_TYPE) {
+        case 1:
+            genSurfacePoV();
+            break;
+        case 2:
+            genVolumePoV();
+            break;
+        default:
+            genPathPoV();
+    }
+    
+    remove("atoms-done.bin");
     rename("atoms.bin", "atoms-done.bin");
     clean();
     return 0;

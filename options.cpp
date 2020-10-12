@@ -5,6 +5,7 @@
 
 #include "./headers/Options.hpp"
 
+u8 Options::GENERATOR_TYPE = 0;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
