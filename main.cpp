@@ -290,13 +290,17 @@ void genAPoVSpace() {
 
                 const Vec4<float> axis = spinAxis[spin];
                 const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
-                Vec4<float> coordinates = getCoordinates<float>(i);
                 
-                if(Options::CAM_LOCK) {
-                    coordinates = math::getReoriented(coordinates, axis);
-                }
+                Vec4<float> coordinates = getCoordinates<float>(i);
+               
                 if(Options::CAM_DISTANCE) {
                     coordinates.z -= Options::CAM_DISTANCE;
+                }
+                
+                coordinates = math::getReoriented(coordinates, axis);
+                
+                if(Options::CAM_LOCK_AT) {
+                    coordinates.z += Options::CAM_LOCK_AT;
                 }
                 
                 u32 quanta = 0;
@@ -400,15 +404,12 @@ int main(int argc, char** argv) {
     fillSpace(voxels, size);
     delete [] voxels;
     
-    switch(Options::GENERATOR_TYPE) {
-        case 1:
-            genSurfacePoV();
-            break;
-        case 2:
-            genVolumePoV();
-            break;
-        default:
-            genPathPoV();
+    if(Options::GENERATOR_TYPE == "surface") {
+        genSurfacePoV();
+    } else if(Options::GENERATOR_TYPE == "volume") {
+        genVolumePoV();
+    } else {
+        genPathPoV();
     }
     
     remove("atoms-done.bin");

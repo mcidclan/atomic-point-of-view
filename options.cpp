@@ -1,28 +1,30 @@
 /*
- * APoV project
+ * APoV project: Generator
  * By m-c/d in 2020
  */
 
 #include "./headers/Options.hpp"
 
-u8 Options::GENERATOR_TYPE = 0;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
-u32 Options::CAM_DISTANCE = 0;
+int Options::CAM_LOCK_AT = 0;
+int Options::CAM_DISTANCE = 0;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
-bool Options::CAM_LOCK = false;
 bool Options::USE_CLUT = false;
 bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
+bool Options::CAM_LOCK_AHEAD = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
+
+std::string Options::GENERATOR_TYPE = "path";
 
 void Options::process(int argc, char **argv) {
     int i = 1;
-    while(i < argc){    
+    while(i < argc){
         const std::string name = argv[i];
         if(name.find("space-block-size:") == 0) {
            Options::SPACE_BLOCK_SIZE = std::stoi(name.substr(17)); 
@@ -45,12 +47,14 @@ void Options::process(int argc, char **argv) {
             }
         } else if(name.find("cam-distance:") == 0) {
             Options::CAM_DISTANCE = std::stoi(name.substr(13));
-        } else if(name.find("cam-lock:") == 0) {
-            Options::CAM_LOCK = true;
+        } else if(name.find("cam-lock-at:") == 0) {
+            Options::CAM_LOCK_AT = std::stoi(name.substr(12));
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
         } else if(name.find("anti-aliasing") == 0) {
             Options::ANTI_ALIASING = true;
+        } else if(name.find("cam-lock-ahead") == 0) {
+            Options::CAM_LOCK_AHEAD = true;
         }
         i++;
     }
@@ -61,6 +65,12 @@ void Options::process(int argc, char **argv) {
     
     if(Options::PROJECTION_GAPS_REDUCER != 0) {
         Options::PROJECTION_GAPS_REDUCER = 1 + Options::PROJECTION_GAPS_REDUCER * 2;
+    }
+    
+    if(Options::CAM_LOCK_AHEAD) {
+        const float d = Options::SPACE_BLOCK_SIZE * Options::DEPTH_BLOCK_COUNT;
+        Options::CAM_DISTANCE = (int)sqrt(d*d + d*d);
+        Options::CAM_LOCK_AT = -Options::CAM_DISTANCE;
     }
     
     printf("Options set.\n");
