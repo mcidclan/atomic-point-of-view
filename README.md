@@ -37,15 +37,15 @@ For PSP generate the raw data with:
 
     
 ### Available options
-space-block-size: ......... Minimun size of a region block default is 256^3
+space-block-size: ......... Minimun size of a region block (default is 256^3)
 atomic-pov-count: ......... Step angle between two point of views
-ray-step: ................. Export only the frame each n ray step
+ray-step: ................. Change the value of the ray step frame generation
 max-ray-depth: ............ The max length of the ray during the raytracing
 width-block-count: ........ Number of blocks in width
 depth-block-count: ........ Number of blocks in depth
-projection-depth: ......... Value used to pre-render with projection
+projection-depth: ......... Value used to pre-render the region with projection
 cam-distance: ............. Set a distance between the camera and the region
-cam-lock-at: .............. Lock the camera at a geven depth position
-cam-hemisphere ............ Pre-render only the hemisphere front of the camera
-anti-aliasing ............. Pre-render with anti-aliasing filter on
+cam-lock-at: .............. Lock the camera at a given depth position
+cam-hemisphere ............ Pre-render only the front hemisphere of the camera
+anti-aliasing ............. Pre-render with the anti-aliasing filter on
 cam-lock-ahead ............ Lock the camera at the beginning of the space region
