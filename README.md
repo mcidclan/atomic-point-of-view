@@ -4,8 +4,8 @@ Nom de code: APoV.
 
 APoV, standing for Atomic Point of View, is a variant of voxel raytracing,
 proposing an alternative to its realtime calculation cost. The main idea is
-to record the information for a ray, on different angles and from the point of
-view of each voxel, in a given 3d space region. This will produce a huge amount
+to record the information for a ray, in a given 3d space region, on different
+angles and from the point of view of each voxel. This will produce a huge amount
 of raw data, representing the region in multiple point of views. The data could
 be then read or streamed, bringing the advantage of a fast rendering result.
 
@@ -17,7 +17,7 @@ the navigator to produce realtime effect.
 
 First, via blender set the grid unit size to 1, remesh your object into blocks,
 ajust the scale value of the modifier to get the blocks aligned with the units of
-the grid. Apply transformations, move the options to the position 0.5, 0.5, 0.5.
+the grid. Apply transformations, move the object to the position 0.5, 0.5, 0.5.
 Apply position, then export the object with the available python script.
 
 
