@@ -12,12 +12,12 @@ be then read or streamed, bringing the advantage of a fast rendering result.
 The current generator records only 2 informations by ray, per space voxel. The
 RGB color of the scanned voxel, and the ray depth which is the length between
 the space voxel and the scanned voxel. The depth information could be used by
-the navigator to produce realtime effect.
+the navigator to produce realtime effects.
 
 
 First, via blender set the grid unit size to 1, remesh your object into blocks,
-ajust the scale value of the modifier to get the blocks aligned with the units of
-the grid. Apply transformations, move the object to the position 0.5, 0.5, 0.5.
+ajust the scale value of the modifier to get the blocks aligned with the units
+of the grid. Apply transformations, set the object position at 0.5, 0.5, 0.5.
 Apply position, then export the object with the available python script.
 
 
@@ -39,14 +39,13 @@ For PSP generate the raw data with:
 ### Available options
 space-block-size: ......... Minimun size of a region block default is 256^3
 atomic-pov-count: ......... Step angle between two point of views
-ray-step: ................. 
+ray-step: ................. Export only the frame each n ray step
 max-ray-depth: ............ The max length of the ray during the raytracing
 width-block-count: ........ Number of blocks in width
 depth-block-count: ........ Number of blocks in depth
 projection-depth: ......... Value used to pre-render with projection
-projection-gaps-reducer: .. 
-cam-distance: ............. 
-cam-lock-at: .............. 
+cam-distance: ............. Set a distance between the camera and the region
+cam-lock-at: .............. Lock the camera at a geven depth position
 cam-hemisphere ............ Pre-render only the hemisphere front of the camera
 anti-aliasing ............. Pre-render with anti-aliasing filter on
 cam-lock-ahead ............ Lock the camera at the beginning of the space region
