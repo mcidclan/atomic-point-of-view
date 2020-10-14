@@ -70,7 +70,7 @@ void Options::process(int argc, char **argv) {
     if(Options::CAM_LOCK_AHEAD) {
         const float d = Options::SPACE_BLOCK_SIZE * Options::DEPTH_BLOCK_COUNT;
         Options::CAM_DISTANCE = (int)sqrt(d*d + d*d);
-        Options::CAM_LOCK_AT = -Options::CAM_DISTANCE;
+        Options::CAM_LOCK_AT = Options::CAM_DISTANCE;
     }
     
     printf("Options set.\n");
