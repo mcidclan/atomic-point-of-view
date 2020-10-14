@@ -14,12 +14,13 @@ u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
+
+bool Options::USE_HD_CLUT = false;
 bool Options::USE_CLUT = false;
 bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
-
 std::string Options::GENERATOR_TYPE = "path";
 
 void Options::process(int argc, char **argv) {
@@ -55,6 +56,10 @@ void Options::process(int argc, char **argv) {
             Options::ANTI_ALIASING = true;
         } else if(name.find("cam-lock-ahead") == 0) {
             Options::CAM_LOCK_AHEAD = true;
+        } else if(name.find("use-clut") == 0) {
+            Options::USE_CLUT = true;
+        } else if(name.find("use-hd-clut") == 0) {
+            Options::USE_HD_CLUT = true;
         }
         i++;
     }

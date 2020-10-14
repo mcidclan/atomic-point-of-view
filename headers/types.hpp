@@ -4,7 +4,8 @@
     #include <cstdio>
     #include <cstring>
     #include <string>
-        
+    #include <map>
+    
     #define i8 char
     #define i16 short int
     #define i32 int

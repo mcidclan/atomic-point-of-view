@@ -20,6 +20,8 @@
         static u32 ATOMIC_POV_COUNT;
         static u32 RAY_STEP;
         static u32 PROJECTION_GAPS_REDUCER;
+        
+        static bool USE_HD_CLUT;
         static bool USE_CLUT;
         static bool CAM_LOCK_AHEAD;
         static bool ANTI_ALIASING;
