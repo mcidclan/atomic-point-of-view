@@ -19,6 +19,7 @@ First, via blender set the grid unit size to 1, remesh your object into blocks,
 ajust the scale value of the modifier to get the blocks aligned with the units
 of the grid. Apply transformations, set the object position at 0.5, 0.5, 0.5.
 Apply position, then export the object with the available python script.
+Blender 2.78 is recommended.
 
 
 Copy the voxels.bin at the root of the generator repository. Then run the
