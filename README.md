@@ -11,24 +11,24 @@ read or streamed, bringing the advantage of a fast rendering result.
 
 The current generator records only 2 informations by ray, per space voxel. The
 RGB color of the scanned voxel, and the ray depth which is the length between
-the space voxel and the scanned voxel. The depth information will be used by
-the navigator to produce the perspective effect.
+the space voxel and the scanned voxel. The depth information could be used by
+the navigator to produce realtime effect.
 
 
 First, export the voxelized object via blender using the available script.
 
 Then, generate the atomic raw data with the following for a locked camera:
-./bin/apov space-size:256 atomic-pov-count:180 `
-    ray-step:2 max-ray-depth:128 cam-locked
+./bin/apov space-block-size:256 atomic-pov-count:180 ray-step:2 \
+    max-ray-depth:256 projection-depth:300
 
 Or, for a free camera:
-./bin/apov space-size:256 atomic-pov-count:180 `
-    ray-step:2 max-ray-depth:128 cam-hemisphere
+./bin/apov space-block-size:256 atomic-pov-count:180 ray-step:2 \
+    max-ray-depth:256 projection-depth:300 cam-lock-ahead
 
 
 For PSP generate the raw data with:
-./bin/apov space-size:256 atomic-pov-count:36 \
-    ray-step:8 max-ray-depth:256 cam-locked
+./bin/apov space-block-size:256 atomic-pov-count:90 ray-step:4 \
+    max-ray-depth:256 projection-depth:300
     
 ### Available options
 space-block-size: ......... Minimun size of a region block default is 256^3
