@@ -5,6 +5,8 @@
     #include <cstring>
     #include <string>
     #include <map>
+    #include <vector>
+    #include <algorithm>
     
     #define i8 char
     #define i16 short int

@@ -235,46 +235,44 @@ void applyFilters(u32* const frame) {
     }
 }
 
-
-#define CLUT_G_OFFSET 6
-#define CLUT_B_OFFSET 36
-#define CLUT_COLOR_UNIT 51
 #define CLUT_COLOR_COUNT 216
-static u32 clut[CLUT_COLOR_COUNT] = {0};
-u8 updateClut(const u32 value) { //DBGR
-    const u16 r = value & 0x000000FF;
-    const u16 g = (value >> 8) & 0x000000FF;
-    const u16 b = (value >> 16) & 0x000000FF;
+#define CLUT_MAX_COLOR_COUNT 16384
+static u32 clut[CLUT_MAX_COLOR_COUNT] = {0};
+static std::map<u32, std::vector<u32>> clutMap;
+u16 updateClut(u32 value) { //DBGR
+    value = 0xFF000000 |  value;
+    u32 key = value;
     
-    u8 i = (r / CLUT_COLOR_UNIT) +
-           (g / CLUT_COLOR_UNIT) * CLUT_G_OFFSET +
-           (b / CLUT_COLOR_UNIT) * CLUT_B_OFFSET;
-           
-    if(!clut[i]) {
-        clut[i] = 0xFF000000 | value;
-    } else {
-        u16 _r = clut[i] & 0x000000FF;
-        u16 _g = (clut[i] >> 8) & 0x000000FF;
-        u16 _b = (clut[i] >> 16) & 0x000000FF;
-        _r = (r + _r) / 2;
-        _g = (g + _g) / 2;
-        _b = (b + _b) / 2;
-        clut[i] = 0xFF000000 | (_b << 16) | (_g << 8) | _r;
+    if(Options::COMPRESS_CLUT) {
+        static const float p = 1.0f / 3.0f;
+        const u8 r = (value & 0x000000FF);
+        const u8 g = ((value >> 8) & 0x000000FF);
+        const u8 b = ((value >> 16) & 0x000000FF);
+        
+        key = powf((b << 16) | (g << 8) | r, p);
     }
-    return i;
-}
-
-
-#define HD_CLUT_MAX_COLOR_COUNT 65536
-static bool clutSatured = false;
-static u32 hdClut[HD_CLUT_MAX_COLOR_COUNT] = {0};
-static std::map<u32, u32> clutMap;
-u16 updateHdClut(const u32 value) { //DBGR
-    clutMap[value] = value;
-    const u16 index = std::distance(clutMap.begin(), clutMap.find(value));
-    if(index >= HD_CLUT_MAX_COLOR_COUNT) {
-        clutSatured = true;
-        return HD_CLUT_MAX_COLOR_COUNT - 1;
+    
+    if(!clutMap.count(key)) {
+        std::vector<u32> v;
+        v.push_back(value);
+        clutMap[key] = v;
+    } else {
+        std::vector<u32>& v = clutMap[key];
+        if(std::find(v.begin(), v.end(), value) == v.end()) {
+            v.push_back(value);
+        }
+    }
+    
+    u16 index = std::distance(clutMap.begin(), clutMap.find(key));
+    
+    if(Options::COMPRESS_CLUT) {
+        if(index >= CLUT_COLOR_COUNT) {
+            index = CLUT_COLOR_COUNT - 1;
+        }
+    } else {
+        if(index >= CLUT_MAX_COLOR_COUNT) {
+            index = CLUT_MAX_COLOR_COUNT - 1;
+        }
     }
     return index;
 }
@@ -287,16 +285,12 @@ void genAPoVSpace() {
     u32* const frame = new u32[FRAME_SIZE];
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
 
-    if(Options::USE_CLUT) {
+    if(Options::EXPORT_CLUT) {
         file = fopen("clut-indexes.bin", "wb");
-        if(Options::USE_HD_CLUT) {
-            indexes = new u16[FRAME_SIZE];
-        } else {
+        if(Options::COMPRESS_CLUT) {
             indexes = new u8[FRAME_SIZE];
-        }
-    } else {
-        file = fopen("atoms.bin", "wb");
-    }
+        } else indexes = new u16[FRAME_SIZE];
+    } else file = fopen("atoms.bin", "wb");
     
     if(file != NULL) {
         u16 spin = 0;
@@ -359,26 +353,20 @@ void genAPoVSpace() {
                 write_quanta:
                 const u32 fid = i % FRAME_SIZE;
                 frame[fid] = quanta;
-                if(Options::USE_CLUT) {
-                    if(Options::USE_HD_CLUT) {
-                        ((u16*)indexes)[fid] = updateHdClut(quanta);
-                    }
-                    else ((u8*)indexes)[fid] = updateClut(quanta);
+                if(Options::EXPORT_CLUT) {
+                    if(Options::COMPRESS_CLUT) {
+                        ((u8*)indexes)[fid] = updateClut(quanta);
+                    } else ((u16*)indexes)[fid] = updateClut(quanta);
                     //Todo: apply filers.
                 }
                 if(fid == FRAME_SIZE - 1) {
                     applyFilters(frame);
-                    if(Options::USE_CLUT) {
-                        if(Options::USE_HD_CLUT) {
-                            fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
-                        } else {
+                    if(Options::EXPORT_CLUT) {
+                        if(Options::COMPRESS_CLUT) {
                             fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
-                        }
-                    } else {
-                        fwrite(frame, sizeof(u32), FRAME_SIZE, file);
+                        } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
                     }
                 }
-                
                 i++;
                 if(Options::RAY_STEP > 1) {
                     if(!(i % FRAME_SIZE)) {
@@ -392,33 +380,48 @@ void genAPoVSpace() {
         }
         printf("\n");
         fclose(file);
-        if(Options::USE_CLUT) {
+        if(Options::EXPORT_CLUT) {
             fclose(file);
-            if(Options::USE_HD_CLUT) {
-                u32 count = clutMap.size();
-                printf("Hd Clut contains %u colors.\n", count);
-                if(count >= HD_CLUT_MAX_COLOR_COUNT) {
-                    printf("Hd Clut Satured.");
-                    count = HD_CLUT_MAX_COLOR_COUNT;
-                }
-                
-                u32 i = 0;
-                std::map<u32, u32>::iterator it = clutMap.begin();
-                while(i < count) {
-                    hdClut[i++] = it->first;
-                    std::advance(it, i);
-                }
-                
-                file = fopen("clut.bin", "wb");
-                fwrite(hdClut, sizeof(u32), count, file);            
-                fclose(file);
-                delete [] ((u16*)indexes);
-            } else {
-                file = fopen("clut.bin", "wb");
-                fwrite(clut, sizeof(u32), CLUT_COLOR_COUNT, file);            
-                fclose(file);
-                delete [] ((u8*)indexes);
+            printf("Generates clut file...\n");
+
+            u32 count = clutMap.size();
+            printf("Clut contains %u colors.\n", count);
+            if(count >= CLUT_MAX_COLOR_COUNT) {
+                printf("!!!Hd Clut Satured!!!");
+                count = CLUT_MAX_COLOR_COUNT;
             }
+            
+            if(Options::COMPRESS_CLUT && count >= CLUT_COLOR_COUNT) {
+                count = CLUT_COLOR_COUNT;
+            }
+            
+            u32 i = 0;
+            std::map<u32, std::vector<u32>>::iterator it = clutMap.begin();
+            
+            printf("count: %u\n", count);
+            while(i < count) {
+                u32 r = 0, g = 0, b = 0, j = 0;
+                const u32 s = it->second.size();
+                while(j < s) {
+                    const u32 v = it->second[j];                  
+                    r += v & 0x000000FF;
+                    g += (v >> 8) & 0x000000FF;
+                    b += (v >> 16) & 0x000000FF;
+                    j++;
+                }
+                r /= s; g /= s; b /= s;
+                clut[i] = 0xFF000000 | (b << 16) | (g << 8) | r;
+                it++;
+                i++;
+            }
+            
+            file = fopen("clut.bin", "wb");
+            fwrite(clut, sizeof(u32), count, file);          
+            fclose(file);
+            
+            if(Options::COMPRESS_CLUT) {
+                delete [] ((u8*)indexes);
+            } else delete [] ((u16*)indexes);
         }
     }
     delete [] frame;

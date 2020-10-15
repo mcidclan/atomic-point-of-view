@@ -14,15 +14,14 @@
         static u8 WIDTH_BLOCK_COUNT;
         static u8 DEPTH_BLOCK_COUNT;
         static u16 SPACE_BLOCK_SIZE;
-        static int CAM_LOCK_AT;
-        static int CAM_DISTANCE;
         static u32 MAX_RAY_DEPTH;
         static u32 ATOMIC_POV_COUNT;
         static u32 RAY_STEP;
         static u32 PROJECTION_GAPS_REDUCER;
-        
-        static bool USE_HD_CLUT;
-        static bool USE_CLUT;
+        static int CAM_LOCK_AT;
+        static int CAM_DISTANCE;        
+        static bool EXPORT_CLUT;
+        static bool COMPRESS_CLUT;
         static bool CAM_LOCK_AHEAD;
         static bool ANTI_ALIASING;
         static bool CAM_HEMISPHERE;

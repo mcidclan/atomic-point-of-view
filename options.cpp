@@ -8,15 +8,14 @@
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
-int Options::CAM_LOCK_AT = 0;
-int Options::CAM_DISTANCE = 0;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::ATOMIC_POV_COUNT = 360;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
-
-bool Options::USE_HD_CLUT = false;
-bool Options::USE_CLUT = false;
+int Options::CAM_LOCK_AT = 0;
+int Options::CAM_DISTANCE = 0;
+bool Options::EXPORT_CLUT = false;
+bool Options::COMPRESS_CLUT = false;
 bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
@@ -50,16 +49,16 @@ void Options::process(int argc, char **argv) {
             Options::CAM_DISTANCE = std::stoi(name.substr(13));
         } else if(name.find("cam-lock-at:") == 0) {
             Options::CAM_LOCK_AT = std::stoi(name.substr(12));
+        } else if(name.find("compress-clut") == 0) {
+            Options::COMPRESS_CLUT = true;
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
         } else if(name.find("anti-aliasing") == 0) {
             Options::ANTI_ALIASING = true;
         } else if(name.find("cam-lock-ahead") == 0) {
             Options::CAM_LOCK_AHEAD = true;
-        } else if(name.find("use-clut") == 0) {
-            Options::USE_CLUT = true;
-        } else if(name.find("use-hd-clut") == 0) {
-            Options::USE_HD_CLUT = true;
+        } else if(name.find("export-clut") == 0) {
+            Options::EXPORT_CLUT = true;
         }
         i++;
     }
