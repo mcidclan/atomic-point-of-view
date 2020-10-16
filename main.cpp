@@ -134,12 +134,12 @@ static u8 lumRGB(const u32 value) {
 
 static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
     const u8 s = 1; //size
-    const u8 r = 0; //rounded
-    const u8 m = 0; //mode 0, lite, full.
-    u32 x = SPACE_WIDTH - (s + 1);
-    while(--x > s) {
-        u32 y = SPACE_HEIGHT - (s + 1);
-        while(--y > s) {
+    const u8 r = 1; //rounded
+    const u8 m = 1; //mode 0, lite, full.
+    u32 x = SPACE_WIDTH - (s + r);
+    while(--x > (s + r)) {
+        u32 y = SPACE_HEIGHT - (s + r);
+        while(--y > (s + r)) {
             const u32 i = x | y << SPACE_Y_BIT_OFFSET;
             if(mask == NULL || mask[i]) {
                 const u32 o = src[i];
@@ -176,30 +176,45 @@ static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
 }
 
 static void applyAntiAliasing(u32* const frame) {
-    const u8 threshold = 16;
+    const u8 size = 1;
+    const u8 threshold = 24;
+    const u8 MAT_UNIT_COUNT = size > 1 ? 16 : 8;
     u32* _frame = new u32[FRAME_SIZE];
     u32* __frame = new u32[FRAME_SIZE];
     memset(_frame, 0, FRAME_SIZE * sizeof(u32));
     memset(__frame, 0, FRAME_SIZE * sizeof(u32));
 
-    u32 x = SPACE_WIDTH - 1;
-    while(--x) {
-        u32 y = SPACE_HEIGHT - 1;
-        while(--y) {
+    u32 x = SPACE_WIDTH - size;
+    while(--x > size) {
+        u32 y = SPACE_HEIGHT - size;
+        while(--y > size) {
             const u32 i = x | y << SPACE_Y_BIT_OFFSET;
             const u32 o = frame[i];
             
-            const u32 n[8] = {
-                (x + 1) | y << SPACE_Y_BIT_OFFSET,
-                (x - 1) | y << SPACE_Y_BIT_OFFSET,
-                x | (y + 1) << SPACE_Y_BIT_OFFSET,
-                x | (y - 1) << SPACE_Y_BIT_OFFSET,
+            u32 n[MAT_UNIT_COUNT] = {
+                (x + size) | y << SPACE_Y_BIT_OFFSET,
+                (x - size) | y << SPACE_Y_BIT_OFFSET,
+                x | (y + size) << SPACE_Y_BIT_OFFSET,
+                x | (y - size) << SPACE_Y_BIT_OFFSET,
                 
-                (x + 1) | (y + 1) << SPACE_Y_BIT_OFFSET,
-                (x - 1) | (y + 1) << SPACE_Y_BIT_OFFSET,
-                (x + 1) | (y - 1) << SPACE_Y_BIT_OFFSET,
-                (x - 1) | (y - 1) << SPACE_Y_BIT_OFFSET
+                (x + size) | (y + size) << SPACE_Y_BIT_OFFSET,
+                (x - size) | (y + size) << SPACE_Y_BIT_OFFSET,
+                (x + size) | (y - size) << SPACE_Y_BIT_OFFSET,
+                (x - size) | (y - size) << SPACE_Y_BIT_OFFSET
             };
+            
+            if(MAT_UNIT_COUNT > 8) {
+                const u8 _size = size - 1;
+                n[8] = (x + _size) | y << SPACE_Y_BIT_OFFSET;
+                n[9] = (x - _size) | y << SPACE_Y_BIT_OFFSET;
+                n[10] = x | (y + _size) << SPACE_Y_BIT_OFFSET;
+                n[11] = x | (y - _size) << SPACE_Y_BIT_OFFSET;
+                
+                n[12] = (x + _size) | (y + _size) << SPACE_Y_BIT_OFFSET;
+                n[13] = (x - _size) | (y + _size) << SPACE_Y_BIT_OFFSET;
+                n[14] = (x + _size) | (y - _size) << SPACE_Y_BIT_OFFSET;
+                n[15] = (x - _size) | (y - _size) << SPACE_Y_BIT_OFFSET;
+            }
             
             const u8 lumo = lumRGB(o);
             const u8 a = math::abs<i16>(lumo - lumRGB(frame[n[0]])) > threshold;
@@ -212,7 +227,21 @@ static void applyAntiAliasing(u32* const frame) {
             const u8 g = math::abs<i16>(lumo - lumRGB(frame[n[2]])) > threshold;
             const u8 h = math::abs<i16>(lumo - lumRGB(frame[n[3]])) > threshold;
             
-            if(o && (a || b || c || d || e || f || g || h)) {
+            u8 _a = 0, _b = 0, _c = 0, _d = 0, _e = 0, _f = 0, _g = 0, _h = 0;
+            if(MAT_UNIT_COUNT > 8) {
+                _a = math::abs<i16>(lumo - lumRGB(frame[n[0]])) > threshold;
+                _b = math::abs<i16>(lumo - lumRGB(frame[n[1]])) > threshold;
+                _c = math::abs<i16>(lumo - lumRGB(frame[n[2]])) > threshold;
+                _d = math::abs<i16>(lumo - lumRGB(frame[n[3]])) > threshold;
+                
+                _e = math::abs<i16>(lumo - lumRGB(frame[n[0]])) > threshold;
+                _f = math::abs<i16>(lumo - lumRGB(frame[n[1]])) > threshold;
+                _g = math::abs<i16>(lumo - lumRGB(frame[n[2]])) > threshold;
+                _h = math::abs<i16>(lumo - lumRGB(frame[n[3]])) > threshold;
+            }
+            
+            if(o && (a || b || c || d || e || f || g || h ||
+                _a || _b || _c || _d || _e || _f || _g || _h)) {
                 _frame[i] = 0xFFFFFFFF;
                 u8 p = 8;
                 while(p--) {
@@ -353,19 +382,21 @@ void genAPoVSpace() {
                 write_quanta:
                 const u32 fid = i % FRAME_SIZE;
                 frame[fid] = quanta;
-                if(Options::EXPORT_CLUT) {
-                    if(Options::COMPRESS_CLUT) {
-                        ((u8*)indexes)[fid] = updateClut(quanta);
-                    } else ((u16*)indexes)[fid] = updateClut(quanta);
-                    //Todo: apply filers.
-                }
+                
                 if(fid == FRAME_SIZE - 1) {
                     applyFilters(frame);
+                    
                     if(Options::EXPORT_CLUT) {
+                        u32 i = FRAME_SIZE;
+                        while(i--) {
+                            if(Options::COMPRESS_CLUT) {
+                                ((u8*)indexes)[i] = updateClut(frame[i]);
+                            } else ((u16*)indexes)[i] = updateClut(frame[i]);
+                        }
                         if(Options::COMPRESS_CLUT) {
                             fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
                         } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
-                    }
+                    } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
                 }
                 i++;
                 if(Options::RAY_STEP > 1) {
