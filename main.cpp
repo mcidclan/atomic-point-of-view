@@ -280,12 +280,12 @@ u16 updateClut(u32 value) {
     
     if(Options::COMPRESS_CLUT) {
         key = ((u8)-1);
-        static const u8 f = Options::CLUT_COMPRESSION_FACTOR;
+        static const float f = Options::CLUT_COMPRESSION_FACTOR;
         const u32 k = 0x00FFFFFF & value;
-        const u8 r = (k & 0x000000FF);
-        const u8 g = ((k >> 8) & 0x000000FF);
-        const u8 b = ((k >> 16) & 0x000000FF);
-        const u8 l = (r + g + b) / 3;
+        const float r = (k & 0x000000FF);
+        const float g = ((k >> 8) & 0x000000FF);
+        const float b = ((k >> 16) & 0x000000FF);
+        const float l = (r + g + b) / 3;
         
         if(Options::CLUT_COMPRESSION_MODE == 1) {
             static const float _f = f / 8.0f;
@@ -294,10 +294,16 @@ u16 updateClut(u32 value) {
             const u8 cr = (0.439f * r - 0.368f * g - 0.071f * b + 128.0f) / f;
             key = (y << 16) | (cb << 8) | cr;
         } else if(Options::CLUT_COMPRESSION_MODE == 2) {
-            key = ((b / f) << 16) | ((g / f) << 8) | (r / f);
-        } else {
-            key = l;
-        }
+            const u8 _r = r / f;
+            const u8 _g = g / f;
+            const u8 _b = b / f;
+            key = (_r << 16) | (_g  << 8) | _b;
+        } else if(Options::CLUT_COMPRESSION_MODE == 3) {
+            const u8 _r = 0.299f * (r / f);
+            const u8 _g = 0.587f * (g / f);
+            const u8 _b = 0.114f * (b / f);
+            key = (_r << 16) | (_g << 8) | _b;
+        } else key = l;
     }
     
     if(!clutMap.count(key)) {

@@ -12,7 +12,6 @@
         public:
         static std::string GENERATOR_TYPE;
         static u8 CLUT_COMPRESSION_MODE;
-        static u8 CLUT_COMPRESSION_FACTOR;
         static u8 ANTI_ALIASING_THRESHOLD;
         static u8 WIDTH_BLOCK_COUNT;
         static u8 DEPTH_BLOCK_COUNT;
@@ -29,6 +28,7 @@
         static bool ANTI_ALIASING;
         static bool CAM_HEMISPHERE;
         static float MAX_PROJECTION_DEPTH;
+        static float CLUT_COMPRESSION_FACTOR;
         //
         static void process(int argc, char **argv);
     };

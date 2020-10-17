@@ -6,7 +6,6 @@
 #include "./headers/Options.hpp"
 
 u8 Options::CLUT_COMPRESSION_MODE = 0;
-u8 Options::CLUT_COMPRESSION_FACTOR = 0;
 u8 Options::ANTI_ALIASING_THRESHOLD = 24;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
@@ -23,6 +22,8 @@ bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
+float Options::CLUT_COMPRESSION_FACTOR = 0.0f;
+
 std::string Options::GENERATOR_TYPE = "path";
 
 void Options::process(int argc, char **argv) {
@@ -55,7 +56,7 @@ void Options::process(int argc, char **argv) {
         } else if(name.find("anti-aliasing-threshold:") == 0) {
             Options::ANTI_ALIASING_THRESHOLD = std::stoi(name.substr(24));
         } else if(name.find("clut-compression-factor:") == 0) {
-            Options::CLUT_COMPRESSION_FACTOR = std::stoi(name.substr(24));
+            Options::CLUT_COMPRESSION_FACTOR = std::stof(name.substr(24));
         } else if(name.find("clut-compression-mode:") == 0) {
             if(name.substr(22) == "ycbcr") {
                 Options::CLUT_COMPRESSION_MODE = 1;
@@ -67,7 +68,12 @@ void Options::process(int argc, char **argv) {
                 if(!Options::CLUT_COMPRESSION_FACTOR) {
                     Options::CLUT_COMPRESSION_FACTOR = 9;
                 }
-            } else if(name.substr(22) == "lum") {
+            } else if(name.substr(22) == "luminance") {
+                Options::CLUT_COMPRESSION_MODE = 3;
+                if(!Options::CLUT_COMPRESSION_FACTOR) {
+                    Options::CLUT_COMPRESSION_FACTOR = 4;
+                }
+            } else if(name.substr(22) == "average") {
                 Options::CLUT_COMPRESSION_MODE = 0;
             }
         } else if(name.find("compress-clut") == 0) {
