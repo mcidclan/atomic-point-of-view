@@ -177,7 +177,7 @@ static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
 
 static void applyAntiAliasing(u32* const frame) {
     const u8 size = 1;
-    const u8 threshold = 24;
+    const u8 threshold = Options::ANTI_ALIASING_THRESHOLD;
     const u8 MAT_UNIT_COUNT = size > 1 ? 16 : 8;
     u32* _frame = new u32[FRAME_SIZE];
     u32* __frame = new u32[FRAME_SIZE];
@@ -264,39 +264,62 @@ void applyFilters(u32* const frame) {
     }
 }
 
-#define CLUT_COLOR_COUNT 216
+#define CLUT_COLOR_COUNT 256
 #define CLUT_MAX_COLOR_COUNT 16384
+
+typedef struct {
+    std::vector<u32> values;
+    u32 index;
+} ClutChunk;
+
 static u32 clut[CLUT_MAX_COLOR_COUNT] = {0};
-static std::map<u32, std::vector<u32>> clutMap;
-u16 updateClut(u32 value) { //DBGR
-    value = 0xFF000000 |  value;
-    u32 key = value;
+static std::map<u32, ClutChunk> clutMap;
+u16 updateClut(u32 value) {
+    value = 0xFF000000 | value;
+    u32 key = ((u16)-1);
     
     if(Options::COMPRESS_CLUT) {
-        static const float p = 1.0f / 3.0f;
-        const u8 r = (value & 0x000000FF);
-        const u8 g = ((value >> 8) & 0x000000FF);
-        const u8 b = ((value >> 16) & 0x000000FF);
+        key = ((u8)-1);
+        static const u8 f = Options::CLUT_COMPRESSION_FACTOR;
+        const u32 k = 0x00FFFFFF & value;
+        const u8 r = (k & 0x000000FF);
+        const u8 g = ((k >> 8) & 0x000000FF);
+        const u8 b = ((k >> 16) & 0x000000FF);
+        const u8 l = (r + g + b) / 3;
         
-        key = powf((b << 16) | (g << 8) | r, p);
+        if(Options::CLUT_COMPRESSION_MODE == 1) {
+            static const float _f = f / 8.0f;
+            const u8 y = (0.299f * r + 0.587f * g + 0.114f * b - 128.0f) / _f;
+            const u8 cb = (-0.148f * r - 0.291f * g + 0.439f * b + 128.0f) / f;
+            const u8 cr = (0.439f * r - 0.368f * g - 0.071f * b + 128.0f) / f;
+            key = (y << 16) | (cb << 8) | cr;
+        } else if(Options::CLUT_COMPRESSION_MODE == 2) {
+            key = ((b / f) << 16) | ((g / f) << 8) | (r / f);
+        } else {
+            key = l;
+        }
     }
     
     if(!clutMap.count(key)) {
         std::vector<u32> v;
         v.push_back(value);
-        clutMap[key] = v;
+        const ClutChunk chunk = {
+            v,
+            clutMap.size()
+        };
+        clutMap[key] = chunk;
     } else {
-        std::vector<u32>& v = clutMap[key];
+        std::vector<u32>& v = clutMap[key].values;
         if(std::find(v.begin(), v.end(), value) == v.end()) {
             v.push_back(value);
         }
     }
-    
-    u16 index = std::distance(clutMap.begin(), clutMap.find(key));
+        
+    u16 index = clutMap[key].index;
     
     if(Options::COMPRESS_CLUT) {
         if(index >= CLUT_COLOR_COUNT) {
-            index = CLUT_COLOR_COUNT - 1;
+            index = 0;//CLUT_COLOR_COUNT - 1;
         }
     } else {
         if(index >= CLUT_MAX_COLOR_COUNT) {
@@ -426,24 +449,24 @@ void genAPoVSpace() {
                 count = CLUT_COLOR_COUNT;
             }
             
-            u32 i = 0;
-            std::map<u32, std::vector<u32>>::iterator it = clutMap.begin();
+            std::map<u32, ClutChunk>::iterator it = clutMap.begin();
             
             printf("count: %u\n", count);
-            while(i < count) {
-                u32 r = 0, g = 0, b = 0, j = 0;
-                const u32 s = it->second.size();
-                while(j < s) {
-                    const u32 v = it->second[j];                  
-                    r += v & 0x000000FF;
-                    g += (v >> 8) & 0x000000FF;
-                    b += (v >> 16) & 0x000000FF;
-                    j++;
+            while(it != clutMap.end()) {
+                if(it->second.index < count) {
+                    u32 r = 0, g = 0, b = 0, j = 0;
+                    const u32 s = it->second.values.size();
+                    while(j < s) {
+                        const u32 v = it->second.values[j];                  
+                        r += v & 0x000000FF;
+                        g += (v >> 8) & 0x000000FF;
+                        b += (v >> 16) & 0x000000FF;
+                        j++;
+                    }
+                    r /= s; g /= s; b /= s;
+                    clut[it->second.index] = 0xFF000000 | (b << 16) | (g << 8) | r;
                 }
-                r /= s; g /= s; b /= s;
-                clut[i] = 0xFF000000 | (b << 16) | (g << 8) | r;
                 it++;
-                i++;
             }
             
             file = fopen("clut.bin", "wb");

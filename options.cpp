@@ -5,6 +5,9 @@
 
 #include "./headers/Options.hpp"
 
+u8 Options::CLUT_COMPRESSION_MODE = 0;
+u8 Options::CLUT_COMPRESSION_FACTOR = 0;
+u8 Options::ANTI_ALIASING_THRESHOLD = 24;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
@@ -49,6 +52,24 @@ void Options::process(int argc, char **argv) {
             Options::CAM_DISTANCE = std::stoi(name.substr(13));
         } else if(name.find("cam-lock-at:") == 0) {
             Options::CAM_LOCK_AT = std::stoi(name.substr(12));
+        } else if(name.find("anti-aliasing-threshold:") == 0) {
+            Options::ANTI_ALIASING_THRESHOLD = std::stoi(name.substr(24));
+        } else if(name.find("clut-compression-factor:") == 0) {
+            Options::CLUT_COMPRESSION_FACTOR = std::stoi(name.substr(24));
+        } else if(name.find("clut-compression-mode:") == 0) {
+            if(name.substr(22) == "ycbcr") {
+                Options::CLUT_COMPRESSION_MODE = 1;
+                if(!Options::CLUT_COMPRESSION_FACTOR) {
+                    Options::CLUT_COMPRESSION_FACTOR = 32;
+                }
+            } else if(name.substr(22) == "rgb") {
+                Options::CLUT_COMPRESSION_MODE = 2;
+                if(!Options::CLUT_COMPRESSION_FACTOR) {
+                    Options::CLUT_COMPRESSION_FACTOR = 9;
+                }
+            } else if(name.substr(22) == "lum") {
+                Options::CLUT_COMPRESSION_MODE = 0;
+            }
         } else if(name.find("compress-clut") == 0) {
             Options::COMPRESS_CLUT = true;
         } else if(name.find("cam-hemisphere") == 0) {

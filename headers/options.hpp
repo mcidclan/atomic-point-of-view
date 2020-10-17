@@ -11,6 +11,9 @@
     class Options {
         public:
         static std::string GENERATOR_TYPE;
+        static u8 CLUT_COMPRESSION_MODE;
+        static u8 CLUT_COMPRESSION_FACTOR;
+        static u8 ANTI_ALIASING_THRESHOLD;
         static u8 WIDTH_BLOCK_COUNT;
         static u8 DEPTH_BLOCK_COUNT;
         static u16 SPACE_BLOCK_SIZE;
