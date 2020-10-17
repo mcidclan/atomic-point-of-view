@@ -47,8 +47,6 @@ void init() {
     FRAME_SIZE = SPACE_WIDTH * SPACE_HEIGHT;
     SPACE_ATOM_QUANTITY = SPACE_WIDTH * SPACE_HEIGHT * SPACE_DEPTH;
     
-    printf("Atom quantity: %u\n", SPACE_ATOM_QUANTITY);
-    
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
         
@@ -104,7 +102,7 @@ Vec4<T> getCoordinates(const u32 offset) {
 }
 
 void fillSpace(Voxel* const voxels, const u32 quantity) {
-    printf("Starts filling space...\n");
+    printf("Filling the space with voxels...\n");
     u32 i = quantity;
     while(i--) {
         Voxel* const voxel = &voxels[i];
@@ -113,7 +111,7 @@ void fillSpace(Voxel* const voxels, const u32 quantity) {
             space[offset] = voxel->color;
         }
     }
-    printf("Space filled.\n");
+    printf("  Done!\n\n");
 }
 
 u32 getQuantum(const u32 color, const float depth) {
@@ -336,7 +334,8 @@ u16 updateClut(u32 value) {
 }
 
 void genAPoVSpace() {
-    printf("Starts generating APoV region...\n");
+    printf("Generating APoV region... \n");
+    printf("  Scanning space...\n");
     FILE* file = NULL;
     void* indexes = NULL;
     
@@ -359,7 +358,7 @@ void genAPoVSpace() {
             while(i < SPACE_ATOM_QUANTITY) {
                 if((u8)(i * step) > percent) {
                     percent++;
-                    printf("\r%u%%", percent);
+                    printf("\r    %u%%", percent);
                 }
 
                 const Vec4<float> axis = spinAxis[spin];
@@ -435,29 +434,29 @@ void genAPoVSpace() {
                 }  
             } 
             spin++;
-            printf("\r100%%");
+            printf("\r    100%%");
             printf(" | %d/%d\n", spin, ATOMIC_POV_COUNT);
         }
-        printf("\n");
+        printf("Done!\n\n");
         fclose(file);
         if(Options::EXPORT_CLUT) {
             fclose(file);
-            printf("Generates clut file...\n");
+            printf("  Generating clut file...\n");
 
             u32 count = clutMap.size();
-            printf("Clut contains %u colors.\n", count);
+            printf("    %u colors available.\n", count);
             if(count >= CLUT_MAX_COLOR_COUNT) {
-                printf("!!!Hd Clut Satured!!!");
+                printf("    !!!Clut will be satured!!!\n");
                 count = CLUT_MAX_COLOR_COUNT;
             }
             
             if(Options::COMPRESS_CLUT && count >= CLUT_COLOR_COUNT) {
+                printf("    !!!Clut will be satured!!!\n");
                 count = CLUT_COLOR_COUNT;
             }
             
             std::map<u32, ClutChunk>::iterator it = clutMap.begin();
             
-            printf("count: %u\n", count);
             while(it != clutMap.end()) {
                 if(it->second.index < count) {
                     u32 r = 0, g = 0, b = 0, j = 0;
@@ -482,10 +481,11 @@ void genAPoVSpace() {
             if(Options::COMPRESS_CLUT) {
                 delete [] ((u8*)indexes);
             } else delete [] ((u16*)indexes);
+            printf("    Clut file generated!\n\n");
         }
     }
     delete [] frame;
-    printf("Generation done!\n");
+    printf("  APoV region generated!\n\n");
 }
 
 // Volume mode APoV generation
@@ -515,6 +515,7 @@ int main(int argc, char** argv) {
         printf("File content is null");
     }
     
+    printf("\n");
     fillSpace(voxels, size);
     delete [] voxels;
     
