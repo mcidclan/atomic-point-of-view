@@ -5,7 +5,7 @@
 
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
-    #include "types.hpp"
+    #include "math.hpp"
     #include <cmath>
     
     class Options {
@@ -17,7 +17,8 @@
         static u8 DEPTH_BLOCK_COUNT;
         static u16 SPACE_BLOCK_SIZE;
         static u32 MAX_RAY_DEPTH;
-        static u32 ATOMIC_POV_COUNT;
+        static u32 HORIZONTAL_POV_COUNT;
+        static u32 VERTICAL_POV_COUNT;
         static u32 RAY_STEP;
         static u32 PROJECTION_GAPS_REDUCER;
         static int CAM_LOCK_AT;

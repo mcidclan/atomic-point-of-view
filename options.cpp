@@ -11,7 +11,8 @@ u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
 u32 Options::MAX_RAY_DEPTH = 64;
-u32 Options::ATOMIC_POV_COUNT = 360;
+u32 Options::HORIZONTAL_POV_COUNT = 360;
+u32 Options::VERTICAL_POV_COUNT = 1;
 u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
 int Options::CAM_LOCK_AT = 0;
@@ -32,10 +33,24 @@ void Options::process(int argc, char **argv) {
         const std::string name = argv[i];
         if(name.find("space-block-size:") == 0) {
            Options::SPACE_BLOCK_SIZE = std::stoi(name.substr(17)); 
-        } else if(name.find("atomic-pov-count:") == 0) {
-            Options::ATOMIC_POV_COUNT = std::stoi(name.substr(17));
+        } else if(name.find("horizontal-pov-count:") == 0) {
+            const u16 count = std::stoi(name.substr(21));
+            if(count > 0) {
+                Options::HORIZONTAL_POV_COUNT = count < 360 ? count : 360;
+            }
+        } else if(name.find("vertical-pov-count:") == 0) {
+            const u16 count = std::stoi(name.substr(19));
+            if(count > 0) {
+                Options::VERTICAL_POV_COUNT = count < 360 ? count : 360;
+            }
         } else if(name.find("ray-step:") == 0) {
             Options::RAY_STEP = std::stoi(name.substr(9));
+            if(!math::getPower((u16)Options::RAY_STEP)) {
+                printf("!!!ray-step must be a power of 2!!!\n");
+                printf("!!!ray-step sets to 1!!!\n");
+                Options::RAY_STEP = 1;
+            }
+            
         } else if(name.find("max-ray-depth:") == 0) {
             Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
         } else if(name.find("width-block-count:") == 0) {

@@ -21,9 +21,12 @@ static u32 SPACE_SIZE_DIGITS_Y;
 static u32 SPACE_SIZE_DIGITS_Z;
 static u32 SPACE_ATOM_QUANTITY;
 static u32 FRAME_SIZE;
-static u32 ATOMIC_POV_COUNT;
+static u32 VERTICAL_POV_COUNT;
+static u32 HORIZONTAL_POV_COUNT;
 static u32* space;
-static Vec4<float>* spinAxis;
+
+static Vec4<float>* horizontalSpinAxis;
+static Vec4<float>* verticalSpinAxis;
 
 void init() {
     PROJECTION_FACTOR = 1.0f / Options::MAX_PROJECTION_DEPTH;
@@ -49,26 +52,50 @@ void init() {
     
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
+
+    // Todo
+    
+    {   
+        HORIZONTAL_POV_COUNT = Options::CAM_HEMISPHERE ?
+        Options::HORIZONTAL_POV_COUNT / 2 : Options::HORIZONTAL_POV_COUNT;
+        horizontalSpinAxis = new Vec4<float>[HORIZONTAL_POV_COUNT];
         
-    ATOMIC_POV_COUNT = Options::CAM_HEMISPHERE ?
-    Options::ATOMIC_POV_COUNT / 2 : Options::ATOMIC_POV_COUNT;
-    spinAxis = new Vec4<float>[ATOMIC_POV_COUNT];
-        
-    u16 i = 0;
-    u16 id = 0;
-    while(i < Options::ATOMIC_POV_COUNT) {
-        float spin = (float)(i * (360 / Options::ATOMIC_POV_COUNT));
-        if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
-            spinAxis[id] = {0.0f, 1.0f, 0.0f, _ang(spin)};
-            id++;
+        u16 i = 0;
+        u16 id = 0;
+        while(i < Options::HORIZONTAL_POV_COUNT) {
+            const float spin = (float)(i * (360 / Options::HORIZONTAL_POV_COUNT));
+            if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
+                horizontalSpinAxis[id] = {0.0f, 1.0f, 0.0f, _ang(spin)};
+                id++;
+            }
+            i++;
         }
-        i++;
-    }    
+    }
+
+//
+
+    {
+        VERTICAL_POV_COUNT = Options::CAM_HEMISPHERE ?
+        Options::VERTICAL_POV_COUNT / 2 : Options::VERTICAL_POV_COUNT;
+        verticalSpinAxis = new Vec4<float>[VERTICAL_POV_COUNT];
+        
+        u16 i = 0;
+        u16 id = 0;
+        while(i < Options::VERTICAL_POV_COUNT) {
+            const float spin = (float)(i * (360 / Options::VERTICAL_POV_COUNT));
+            if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
+                verticalSpinAxis[id] = {1.0f, 0.0f, 0.0f, _ang(spin)};
+                id++;
+            }
+            i++;
+        }
+    }
 }
 
 void clean() {
     delete [] space;
-    delete [] spinAxis;
+    delete [] horizontalSpinAxis;
+    delete [] verticalSpinAxis;
 }
 
 template <typename T>
@@ -350,95 +377,100 @@ void genAPoVSpace() {
     } else file = fopen("atoms.bin", "wb");
     
     if(file != NULL) {
-        u16 spin = 0;
+        u16 hspin = 0;
         const float step = 100.0f / SPACE_ATOM_QUANTITY ;
-        while(spin < ATOMIC_POV_COUNT) {
-            u32 i = 0;
-            u8 percent = 0;
-            while(i < SPACE_ATOM_QUANTITY) {
-                if((u8)(i * step) > percent) {
-                    percent++;
-                    printf("\r    %u%%", percent);
-                }
-
-                const Vec4<float> axis = spinAxis[spin];
-                const Vec4<float> normalized = math::getReoriented({0.0f, 0.0f, 1.0f}, axis);
+        while(hspin < HORIZONTAL_POV_COUNT) {
+            u16 vspin = 0;
+            const Vec4<float> qa = math::getOrientedQuat(horizontalSpinAxis[hspin]);
+            
+            while(vspin < VERTICAL_POV_COUNT) {
+                u32 i = 0;
+                u8 percent = 0;
+                const Vec4<float> qb = math::getOrientedQuat(verticalSpinAxis[vspin]);
                 
-                Vec4<float> coordinates = getCoordinates<float>(i);
-               
-                if(Options::CAM_DISTANCE) {
-                    coordinates.z -= Options::CAM_DISTANCE;
-                }
+                const Vec4<float> qc = math::mulQuat(qa, qb);
+                const Vec4<float> raystep = math::getSandwichProduct({0.0f, 0.0f, 1.0f, 0.0f}, qc);
                 
-                coordinates = math::getReoriented(coordinates, axis);
-                
-                if(Options::CAM_LOCK_AT) {
-                    coordinates.z += Options::CAM_LOCK_AT;
-                }
-                
-                u32 quanta = 0;
-                float depth = 0.0f;
-                while(depth < Options::MAX_RAY_DEPTH) {
-                    u8 r = 0; //Todo
-                    static const int wraper[7] = {0, 1, -1, 2, -2, 3, -3};
-                    do {
-                        Vec4<float> c = coordinates;
-                        if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
-                            const float scale = 1.0f + (depth * PROJECTION_FACTOR);
-                            c.x *= scale + wraper[r] * MIN_SCALE_STEP;
-                            c.y *= scale + wraper[r] * MIN_SCALE_STEP;
-                            c.z *= scale + wraper[r] * MIN_SCALE_STEP;
-                        }
-                        
-                        Vec3<float> ray = {
-                            c.x + depth * normalized.x,
-                            c.y + depth * normalized.y,
-                            c.z + depth * normalized.z 
-                        };
-                        
-                        const u32 offset = getOffset(&ray);
-                        
-                        if(offset != u32max) {
-                            if(space[offset] != 0) {
-                                quanta = getQuantum(space[offset], depth);
-                                goto write_quanta;
-                            }
-                        }
-                    } while(r++ < Options::PROJECTION_GAPS_REDUCER);
-                    depth++;
-                }
-                write_quanta:
-                const u32 fid = i % FRAME_SIZE;
-                frame[fid] = quanta;
-                
-                if(fid == FRAME_SIZE - 1) {
-                    applyFilters(frame);
-                    
-                    if(Options::EXPORT_CLUT) {
-                        u32 i = FRAME_SIZE;
-                        while(i--) {
-                            if(Options::COMPRESS_CLUT) {
-                                ((u8*)indexes)[i] = updateClut(frame[i]);
-                            } else ((u16*)indexes)[i] = updateClut(frame[i]);
-                        }
-                        if(Options::COMPRESS_CLUT) {
-                            fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
-                        } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
-                    } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
-                }
-                i++;
-                if(Options::RAY_STEP > 1) {
-                    if(!(i % FRAME_SIZE)) {
-                        i += (FRAME_SIZE * (Options::RAY_STEP - 1));
+                while(i < SPACE_ATOM_QUANTITY) {
+                    if((u8)(i * step) > percent) {
+                        percent++;
+                        printf("\r    %u%%", percent);
                     }
-                }  
-            } 
-            spin++;
-            printf("\r    100%%");
-            printf(" | %d/%d\n", spin, ATOMIC_POV_COUNT);
+                    Vec4<float> coordinates = getCoordinates<float>(i);
+                    if(Options::CAM_DISTANCE) {
+                        coordinates.z -= Options::CAM_DISTANCE;
+                    }
+                    
+                    coordinates = math::getSandwichProduct(coordinates, qc);
+                    
+                    if(Options::CAM_LOCK_AT) {
+                        coordinates.z += Options::CAM_LOCK_AT;
+                    }
+                    
+                    u32 quanta = 0;
+                    float depth = 0.0f;
+                    while(depth < Options::MAX_RAY_DEPTH) {
+                        u8 r = 0; //Todo
+                        static const int wraper[7] = {0, 1, -1, 2, -2, 3, -3};
+                        do {
+                            Vec4<float> c = coordinates;
+                            if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
+                                const float scale = 1.0f + (depth * PROJECTION_FACTOR);
+                                c.x *= scale + wraper[r] * MIN_SCALE_STEP;
+                                c.y *= scale + wraper[r] * MIN_SCALE_STEP;
+                                c.z *= scale + wraper[r] * MIN_SCALE_STEP;
+                            }
+                            Vec3<float> ray = {
+                                c.x + depth * raystep.x,
+                                c.y + depth * raystep.y,
+                                c.z + depth * raystep.z 
+                            };
+                            const u32 offset = getOffset(&ray);
+                            if(offset != u32max) {
+                                if(space[offset] != 0) {
+                                    quanta = getQuantum(space[offset], depth);
+                                    goto write_quanta;
+                                }
+                            }
+                        } while(r++ < Options::PROJECTION_GAPS_REDUCER);
+                        depth++;
+                    }
+                    
+                    write_quanta:
+                    const u32 fid = i % FRAME_SIZE;
+                    frame[fid] = quanta;
+                    if(fid == FRAME_SIZE - 1) {
+                        applyFilters(frame);   
+                        if(Options::EXPORT_CLUT) {
+                            u32 i = FRAME_SIZE;
+                            while(i--) {
+                                if(Options::COMPRESS_CLUT) {
+                                    ((u8*)indexes)[i] = updateClut(frame[i]);
+                                } else ((u16*)indexes)[i] = updateClut(frame[i]);
+                            }
+                            if(Options::COMPRESS_CLUT) {
+                                fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
+                            } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
+                        } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
+                    }
+                    
+                    i++;
+                    if(Options::RAY_STEP > 1) {
+                        if(!(i % FRAME_SIZE)) {
+                            i += (FRAME_SIZE * (Options::RAY_STEP - 1));
+                        }
+                    }
+                }
+                vspin++;
+                printf("\r    100%%");
+                printf(" | v scan | %d/%d\n", vspin, VERTICAL_POV_COUNT);
+            }
+            hspin++;
+            printf("        100%% | h scan | %d/%d\n\n", hspin, HORIZONTAL_POV_COUNT);
         }
         printf("Done!\n\n");
         fclose(file);
+        
         if(Options::EXPORT_CLUT) {
             fclose(file);
             printf("  Generating clut file...\n");
@@ -488,16 +520,6 @@ void genAPoVSpace() {
     printf("  APoV region generated!\n\n");
 }
 
-// Volume mode APoV generation
-// Point of views within the volume described by w, h and d.
-void genVolumePoV() {
-}
-
-// Surface mode APoV generation
-// Point of views over the surface described by w and h.
-void genSurfacePoV() {
-}
-
 // Path mode APoV generation
 // Point of views along the path described by d.
 void genPathPoV() {
@@ -520,9 +542,7 @@ int main(int argc, char** argv) {
     delete [] voxels;
     
     if(Options::GENERATOR_TYPE == "surface") {
-        genSurfacePoV();
     } else if(Options::GENERATOR_TYPE == "volume") {
-        genVolumePoV();
     } else {
         genPathPoV();
     }
