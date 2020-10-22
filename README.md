@@ -43,7 +43,8 @@ space-block-size: ......... Minimun size of a region block (default is 256^3)
 width-block-count: ........ Number of blocks in width
 depth-block-count: ........ Number of blocks in depth
 ____________________________
-atomic-pov-count: ......... Step angle between two point of views
+horizontal-pov-count: ..... Step angle between two horizontal point of views
+vertical-pov-count: ....... Step angle between two vertical point of views
 ray-step: ................. Change the value of the ray step frame generation
 max-ray-depth: ............ The max length of the ray during the raytracing
 ____________________________
