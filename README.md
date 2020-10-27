@@ -11,16 +11,16 @@ be then read or streamed, bringing the advantage of a fast rendering result.
 
 The current generator records only 2 informations by ray, per space voxel. The
 RGB color of the scanned voxel, and the ray depth which is the length between
-the space voxel and the scanned voxel. The depth information could be used by
-the navigator to produce realtime effects.
+the space voxel and the scanned voxel. The depth information could then be used
+by the navigator to produce realtime effects.
 
 
-To generate the APoV file, you need a voxels files entry. You can use one of the
-available voxels.bin file from the zip or generate your own via blender.
+To generate the APoV data file, you need a voxels files entry. You can use one
+of the available voxels.bin file from the zip or generate your own via blender.
 
 Blender 2.78 is recommended to generate the voxels.bin file entry. First set the
 grid unit size to 1, remesh your object into blocks, ajust the scale value of
-the modifier to get the blocks aligned with the units of the grid. Apply
+the modifier to get the blocks aligned with the units of the grid. Apply the
 transformations, set the object position at 0.5, 0.5, 0.5. Apply position, then
 export the object with the available python script.
 
