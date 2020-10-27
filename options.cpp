@@ -128,6 +128,7 @@ void Options::process(int argc, char **argv) {
             FILE* file = fopen("_atoms.bin", "wb");
             if(file != NULL) {
                 u32* const header = new u32[HEADER_LENGTH];
+                memset(header, 0, HEADER_LENGTH*sizeof(u32));
                 header[0] = Options::SPACE_BLOCK_SIZE;
                 header[1] = Options::HORIZONTAL_POV_COUNT;
                 header[2] = Options::VERTICAL_POV_COUNT;
