@@ -15,11 +15,14 @@ the space voxel and the scanned voxel. The depth information could be used by
 the navigator to produce realtime effects.
 
 
-First, via blender set the grid unit size to 1, remesh your object into blocks,
-ajust the scale value of the modifier to get the blocks aligned with the units
-of the grid. Apply transformations, set the object position at 0.5, 0.5, 0.5.
-Apply position, then export the object with the available python script.
-Blender 2.78 is recommended.
+To generate the APoV file, you need a voxels files entry. You can use one of the
+available voxels.bin file from the zip or generate your own via blender.
+
+Blender 2.78 is recommended to generate the voxels.bin file entry. First set the
+grid unit size to 1, remesh your object into blocks, ajust the scale value of
+the modifier to get the blocks aligned with the units of the grid. Apply
+transformations, set the object position at 0.5, 0.5, 0.5. Apply position, then
+export the object with the available python script.
 
 
 Copy the voxels.bin at the root of the generator repository. Then run the
