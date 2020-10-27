@@ -22,6 +22,7 @@ bool Options::COMPRESS_CLUT = false;
 bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
+bool Options::EXPORT_HEADER = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
 float Options::CLUT_COMPRESSION_FACTOR = 0.0f;
 
@@ -101,6 +102,8 @@ void Options::process(int argc, char **argv) {
             Options::CAM_LOCK_AHEAD = true;
         } else if(name.find("export-clut") == 0) {
             Options::EXPORT_CLUT = true;
+        } else if(name.find("export-header") == 0) {
+            Options::EXPORT_HEADER = true;
         }
         i++;
     }
@@ -119,5 +122,24 @@ void Options::process(int argc, char **argv) {
         Options::CAM_LOCK_AT = Options::CAM_DISTANCE;
     }
     
+    if(Options::EXPORT_HEADER) {
+        if(!Options::EXPORT_CLUT) {
+            printf("Export header... ");
+            FILE* file = fopen("_atoms.bin", "wb");
+            if(file != NULL) {
+                u32* const header = new u32[HEADER_LENGTH];
+                header[0] = Options::SPACE_BLOCK_SIZE;
+                header[1] = Options::HORIZONTAL_POV_COUNT;
+                header[2] = Options::VERTICAL_POV_COUNT;
+                header[3] = Options::RAY_STEP;
+                header[4] = Options::WIDTH_BLOCK_COUNT;
+                header[5] = Options::DEPTH_BLOCK_COUNT;
+                fwrite(header, sizeof(u32), HEADER_LENGTH, file);
+                fclose(file);
+                delete header;
+                printf("Done!\n");
+            }
+        } else printf("!!!Header export not available width clut!!!\n");
+    }
     printf("Options set.\n");
 }

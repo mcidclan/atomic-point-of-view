@@ -48,7 +48,7 @@ vertical-pov-count: ....... Step angle between two vertical point of views
 ray-step: ................. Change the value of the ray step frame generation
 max-ray-depth: ............ The max length of the ray during the raytracing
 ____________________________
-cam-distance: ............. Set a distance between the camera and the region
+cam-distance: ............. Sets a distance between the camera and the region
 cam-lock-at: .............. Lock the camera at a given depth position
 cam-hemisphere ............ Pre-render only the front hemisphere of the camera
 cam-lock-ahead ............ Lock the camera at the beginning of the space region
@@ -56,9 +56,13 @@ ____________________________
 projection-depth: ......... Value used to pre-render the region with projection
 ____________________________
 anti-aliasing ............. Pre-render with the anti-aliasing filter on
-anti-aliasing-threshold: .. Threshold between the edges and the surrounding.
+anti-aliasing-threshold: .. Threshold between the edges and the surrounding
 ____________________________
-export-clut ............... Export a CLUT + Indexes instead of raw rgb data
+export-clut ............... Exports a CLUT + Indexes instead of raw rgb data
 compress-clut ............. Try to turn the CLUT into a CLUT of 255 colors only
 clut-compression-mode: .... Available modes are ycbcr, rgb, luminance & average
-clut-compression-factor: .. Need to be used if the clut is saturated.
+clut-compression-factor: .. Need to be used if the clut is saturated
+____________________________
+export-header ............. Exports an header of 80 bytes containing the main
+                            options used to generate the file
+

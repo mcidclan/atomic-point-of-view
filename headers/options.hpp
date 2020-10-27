@@ -8,6 +8,8 @@
     #include "math.hpp"
     #include <cmath>
     
+    #define HEADER_LENGTH 20
+    
     class Options {
         public:
         static std::string GENERATOR_TYPE;
@@ -22,12 +24,13 @@
         static u32 RAY_STEP;
         static u32 PROJECTION_GAPS_REDUCER;
         static int CAM_LOCK_AT;
-        static int CAM_DISTANCE;        
+        static int CAM_DISTANCE;
         static bool EXPORT_CLUT;
         static bool COMPRESS_CLUT;
         static bool CAM_LOCK_AHEAD;
         static bool ANTI_ALIASING;
         static bool CAM_HEMISPHERE;
+        static bool EXPORT_HEADER;
         static float MAX_PROJECTION_DEPTH;
         static float CLUT_COMPRESSION_FACTOR;
         //

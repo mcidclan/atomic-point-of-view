@@ -374,7 +374,9 @@ void genAPoVSpace() {
         if(Options::COMPRESS_CLUT) {
             indexes = new u8[FRAME_SIZE];
         } else indexes = new u16[FRAME_SIZE];
-    } else file = fopen("atoms.bin", "wb");
+    } else if(Options::EXPORT_HEADER) {
+        file = fopen("_atoms.bin", "ab");
+    } else file = fopen("_atoms.bin", "wb");
     
     if(file != NULL) {
         u16 hspin = 0;
@@ -547,8 +549,8 @@ int main(int argc, char** argv) {
         genPathPoV();
     }
     
-    remove("atoms-done.bin");
-    rename("atoms.bin", "atoms-done.bin");
+    remove("atoms.apov");
+    rename("_atoms.bin", "atoms.apov");
     clean();
     return 0;
 }
