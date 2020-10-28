@@ -7,7 +7,7 @@ proposing an alternative to its realtime calculation cost. The main idea is
 to record the information for a ray, in a given 3d space region, on different
 angles and from the point of view of each voxel. This will produce a huge amount
 of raw data, representing the region in multiple point of views. The data could
-be then read or streamed, bringing the advantage of a fast rendering result.
+then be read or streamed, bringing the advantage of a fast rendering result.
 
 The current generator records only 2 informations by ray, per space voxel. The
 RGB color of the scanned voxel, and the ray depth which is the length between
@@ -15,7 +15,7 @@ the space voxel and the scanned voxel. The depth information could then be used
 by the navigator to produce realtime effects.
 
 
-To generate the APoV data file, you need a voxels files entry. You can use one
+To generate the APoV data file, you need a voxels file entry. You can use one
 of the available voxels.bin file from the zip or generate your own via blender.
 
 Blender 2.78 is recommended to generate the voxels.bin file entry. First set the
