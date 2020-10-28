@@ -25,19 +25,27 @@ transformations, set the object position at 0.5, 0.5, 0.5. Apply position, then
 export the object with the available python script.
 
 
-Copy the voxels.bin at the root of the generator repository. Then run the
+Copy the voxels.bin at the root of the repository. Then, as an example, run the
 following command to produce an APoV region with a locked camera navigation:
-./bin/apov space-block-size:256 atomic-pov-count:180 ray-step:2 \
-    max-ray-depth:256 projection-depth:300
+./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:180 \
+    ray-step:2 max-ray-depth:192 projection-depth:300
 
 Or, for a free camera navigation:
-./bin/apov space-block-size:256 atomic-pov-count:180 ray-step:2 \
-    max-ray-depth:256 projection-depth:300 cam-lock-ahead
+./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:180 \
+    ray-step:2 max-ray-depth:192 projection-depth:300 cam-lock-ahead
 
 
-For PSP generate the raw data with:
-./bin/apov space-block-size:256 atomic-pov-count:90 ray-step:4 \
-    max-ray-depth:256 projection-depth:300
+For PSP, to get a smaller raw file, you can run something like the following:
+./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:90 \
+    ray-step:4 max-ray-depth:192 projection-depth:300
+
+Or by using indexed colors:
+./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:180 \
+    ray-step:2 max-ray-depth:192 projection-depth:300 export-clut compress-clut \
+    clut-compression-mode:luminance
+    
+Depending on the number of color you might need to ajust the clut compression by
+ajusting the clut-compression-factor option.
 
 
 ###Available options
