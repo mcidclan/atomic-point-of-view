@@ -45,7 +45,7 @@ Or by using indexed colors:
     clut-compression-mode:luminance
     
 Depending on the number of color you might need to ajust the clut compression by
-ajusting the clut-compression-factor option.
+with the clut-compression-factor option.
 
 
 ###Available options
