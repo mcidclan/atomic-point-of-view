@@ -5,6 +5,7 @@
 
 #include "./headers/Options.hpp"
 
+u8 Options::BLUR_MODE = 1;
 u8 Options::CLUT_COMPRESSION_MODE = 0;
 u8 Options::ANTI_ALIASING_THRESHOLD = 24;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
@@ -23,6 +24,7 @@ bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
 bool Options::EXPORT_HEADER = false;
+bool Options::BLUR_SMOOTH_MATRIX = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
 float Options::CLUT_COMPRESSION_FACTOR = 0.0f;
 
@@ -92,6 +94,8 @@ void Options::process(int argc, char **argv) {
             } else if(name.substr(22) == "average") {
                 Options::CLUT_COMPRESSION_MODE = 0;
             }
+        } else if(name.find("blur-mode:") == 0) {
+            Options::BLUR_MODE = std::stoi(name.substr(10));
         } else if(name.find("compress-clut") == 0) {
             Options::COMPRESS_CLUT = true;
         } else if(name.find("cam-hemisphere") == 0) {
@@ -104,6 +108,8 @@ void Options::process(int argc, char **argv) {
             Options::EXPORT_CLUT = true;
         } else if(name.find("export-header") == 0) {
             Options::EXPORT_HEADER = true;
+        } else if(name.find("blur-smooth-matrix") == 0) {
+            Options::BLUR_SMOOTH_MATRIX = true;
         }
         i++;
     }

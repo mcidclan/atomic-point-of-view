@@ -13,6 +13,7 @@
     class Options {
         public:
         static std::string GENERATOR_TYPE;
+        static u8 BLUR_MODE;
         static u8 CLUT_COMPRESSION_MODE;
         static u8 ANTI_ALIASING_THRESHOLD;
         static u8 WIDTH_BLOCK_COUNT;
@@ -25,6 +26,7 @@
         static u32 PROJECTION_GAPS_REDUCER;
         static int CAM_LOCK_AT;
         static int CAM_DISTANCE;
+        static bool BLUR_SMOOTH_MATRIX;
         static bool EXPORT_CLUT;
         static bool COMPRESS_CLUT;
         static bool CAM_LOCK_AHEAD;

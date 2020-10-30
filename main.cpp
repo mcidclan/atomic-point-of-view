@@ -158,9 +158,9 @@ static u8 lumRGB(const u32 value) {
 }
 
 static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
-    const u8 s = 1; //size
-    const u8 r = 1; //rounded
-    const u8 m = 1; //mode 0, lite, full.
+    const u32 s = 1; //size
+    const u8 r = Options::BLUR_SMOOTH_MATRIX ? 1 : 0; //rounded
+    const u8 m = Options::BLUR_MODE ? 1 : 0;//mode 0, lite, full.
     u32 x = SPACE_WIDTH - (s + r);
     while(--x > (s + r)) {
         u32 y = SPACE_HEIGHT - (s + r);
