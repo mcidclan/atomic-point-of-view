@@ -68,6 +68,8 @@ projection-depth: ......... Value used to pre-render the region with projection
 ____________________________
 anti-aliasing ............. Pre-render with the anti-aliasing filter on
 anti-aliasing-threshold: .. Threshold between the edges and the surrounding
+blur-smooth-matrix: ....... 
+blur-mode: ................ 
 ____________________________
 export-clut ............... Exports a CLUT + Indexes instead of raw rgb data
 compress-clut ............. Try to turn the CLUT into a CLUT of 255 colors only

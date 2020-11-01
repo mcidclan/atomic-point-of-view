@@ -367,8 +367,15 @@ void genAPoVSpace() {
     void* indexes = NULL;
     
     u32* const frame = new u32[FRAME_SIZE];
+    
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
-
+    const float wrapper[7] = {
+        0 * MIN_SCALE_STEP,
+        1 * MIN_SCALE_STEP, -1 * MIN_SCALE_STEP,
+        2 * MIN_SCALE_STEP, -2 * MIN_SCALE_STEP,
+        3 * MIN_SCALE_STEP, -3 * MIN_SCALE_STEP
+    };
+                        
     if(Options::EXPORT_CLUT) {
         file = fopen("clut-indexes.bin", "wb");
         if(Options::COMPRESS_CLUT) {
@@ -414,20 +421,19 @@ void genAPoVSpace() {
                     float depth = 0.0f;
                     while(depth < Options::MAX_RAY_DEPTH) {
                         u8 r = 0; //Todo
-                        static const int wraper[7] = {0, 1, -1, 2, -2, 3, -3};
                         do {
-                            Vec4<float> c = coordinates;
+                            Vec4<float> ray = coordinates;
                             if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
-                                const float scale = 1.0f + (depth * PROJECTION_FACTOR);
-                                c.x *= scale + wraper[r] * MIN_SCALE_STEP;
-                                c.y *= scale + wraper[r] * MIN_SCALE_STEP;
-                                c.z *= scale + wraper[r] * MIN_SCALE_STEP;
+                                const float scale = 1.0f + (depth * PROJECTION_FACTOR); //Todo pre-calc
+                                ray.x *= scale + wrapper[r];
+                                ray.y *= scale + wrapper[r];
+                                ray.z *= scale + wrapper[r];
                             }
-                            Vec3<float> ray = {
-                                c.x + depth * raystep.x,
-                                c.y + depth * raystep.y,
-                                c.z + depth * raystep.z 
-                            };
+                            
+                            ray.x += depth * raystep.x;
+                            ray.y += depth * raystep.y;
+                            ray.z += depth * raystep.z;
+                            
                             const u32 offset = getOffset(&ray);
                             if(offset != u32max) {
                                 if(space[offset] != 0) {

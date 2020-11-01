@@ -3,13 +3,14 @@ EXE = apov.exe
 OBJS = options.o main.o math.o utils.o
 OBJS := $(addprefix $(BIN), $(OBJS))
 
-CXFLAGS = -Wpadded -Wpacked -Wall
+CXFLAGS = -g0 -Wpadded -Wpacked -Wall -Ofast -fno-signed-zeros \
+    -fno-trapping-math -funroll-loops -frename-registers
 LDFLAGS = -lstdc++
 
 all: $(BIN)$(EXE)
 
 $(BIN)$(EXE): $(OBJS)
-	gcc -o $@ $^ $(LDFLAGS)
+	gcc -o $@ $^ $(LDFLAGS) $(CXFLAGS)
 
 $(BIN)%.o: %.cpp
 	gcc -o $@ -c $< $(CXFLAGS)
