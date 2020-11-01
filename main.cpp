@@ -393,6 +393,7 @@ void genAPoVSpace() {
                 const Vec4<float> qc = math::mulQuat(qa, qb);
                 const Vec4<float> raystep = math::getSandwichProduct({0.0f, 0.0f, 1.0f, 0.0f}, qc);
                 
+                u32 writtenFileCount = 0;
                 while(i < SPACE_ATOM_QUANTITY) {
                     if((u8)(i * step) > percent) {
                         percent++;
@@ -454,6 +455,7 @@ void genAPoVSpace() {
                                 fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
                             } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
                         } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
+                        writtenFileCount++;
                     }
                     
                     i++;
@@ -464,7 +466,7 @@ void genAPoVSpace() {
                     }
                 }
                 vspin++;
-                printf("\r    100%%");
+                printf("\r    100%% | %u frames in depth.", writtenFileCount);
                 printf(" | v scan | %d/%d\n", vspin, VERTICAL_POV_COUNT);
             }
             hspin++;
