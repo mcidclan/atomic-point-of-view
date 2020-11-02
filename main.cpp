@@ -425,7 +425,7 @@ void genAPoVSpace() {
                     u16 qstep = 0;
                     u32 quanta = 0;
                     bool blendRayStarted = false;
-                    float blendDepthStart = 0.0f;
+                    float blendDepthStart = Options::MAX_RAY_DEPTH;
                     
                     //memset(quantas, 0, Options::MAX_RAY_DEPTH);
                     
