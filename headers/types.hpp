@@ -37,5 +37,10 @@
     struct Voxel {
         u32 color;
         Vec4<i16> coordinates;
-    };    
+    };
+    
+    struct Quanta {
+        u32 color;
+        float depth;
+    };
 #endif

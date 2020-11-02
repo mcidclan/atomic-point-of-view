@@ -20,6 +20,7 @@
         static u8 DEPTH_BLOCK_COUNT;
         static u16 SPACE_BLOCK_SIZE;
         static u32 MAX_RAY_DEPTH;
+        static u32 MAX_BLEND_DEPTH;
         static u32 HORIZONTAL_POV_COUNT;
         static u32 VERTICAL_POV_COUNT;
         static u32 RAY_STEP;
@@ -33,6 +34,7 @@
         static bool ANTI_ALIASING;
         static bool CAM_HEMISPHERE;
         static bool EXPORT_HEADER;
+        static bool ENABLE_BLENDING;
         static float MAX_PROJECTION_DEPTH;
         static float CLUT_COMPRESSION_FACTOR;
         //

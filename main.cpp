@@ -141,8 +141,12 @@ void fillSpace(Voxel* const voxels, const u32 quantity) {
     printf("  Done!\n\n");
 }
 
+float getDarkness(const float depth) {
+    return 1.0f - (COLOR_DEPTH_STEP * depth);
+}
+
 u32 getQuantum(const u32 color, const float depth) {
-    const float darkness = 1.0f - (COLOR_DEPTH_STEP * depth);
+    const float darkness = getDarkness(depth);
     const u8 r = darkness * ((color >> 24) & 0x000000FF);
     const u8 g = darkness * ((color >> 16) & 0x000000FF);
     const u8 b = darkness * ((color >> 8) & 0x000000FF);
@@ -367,7 +371,8 @@ void genAPoVSpace() {
     void* indexes = NULL;
     
     u32* const frame = new u32[FRAME_SIZE];
-    
+    Quanta* const quantas = new Quanta[Options::MAX_BLEND_DEPTH];
+
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
     const float wrapper[7] = {
         0 * MIN_SCALE_STEP,
@@ -417,7 +422,13 @@ void genAPoVSpace() {
                         coordinates.z += Options::CAM_LOCK_AT;
                     }
                     
+                    u16 qstep = 0;
                     u32 quanta = 0;
+                    bool blendRayStarted = false;
+                    float blendDepthStart = 0.0f;
+                    
+                    //memset(quantas, 0, Options::MAX_RAY_DEPTH);
+                    
                     float depth = 0.0f;
                     while(depth < Options::MAX_RAY_DEPTH) {
                         u8 r = 0; //Todo
@@ -434,13 +445,55 @@ void genAPoVSpace() {
                             ray.y += depth * raystep.y;
                             ray.z += depth * raystep.z;
                             
+                            u32 color = 0;
                             const u32 offset = getOffset(&ray);
                             if(offset != u32max) {
-                                if(space[offset] != 0) {
-                                    quanta = getQuantum(space[offset], depth);
+                                color = space[offset];
+                                if(color != 0) {
+                                    if(Options::ENABLE_BLENDING) {
+                                        if(!blendRayStarted) {
+                                            blendDepthStart = depth;
+                                            blendRayStarted = true;
+                                        }
+                                        quantas[qstep] = {color, depth};
+                                        qstep++;
+                                    } else {
+                                        quanta = getQuantum(color, depth);
+                                        goto write_quanta;
+                                    }
+                                }
+                            }
+                            
+                            if(Options::ENABLE_BLENDING) {
+                                if(((color & 0xFF) == 0xFF) ||
+                                   ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1)) ||
+                                   (depth >= (Options::MAX_RAY_DEPTH - 1))) {
+                                    u8 r = 0, g = 0, b = 0;
+                                    float depth = 0.0f;
+                                    while(qstep--) {
+                                        const Quanta q = quantas[qstep];
+                                        const u8 _r = q.color >> 24;
+                                        const u8 _g = q.color >> 16;
+                                        const u8 _b = q.color >> 8;
+                                        float _a =  q.color & 0xFF;
+                                        
+                                        const float d = getDarkness(q.depth);
+                                        if(q.depth > depth) {
+                                            depth = q.depth;
+                                        }
+                                        
+                                        _a = (_a / 255.0f) * d;
+                                        r = (u8)(_r * _a + (1.0f - _a) * r);
+                                        g = (u8)(_g * _a + (1.0f - _a) * g);
+                                        b = (u8)(_b * _a + (1.0f - _a) * b);
+                                    }
+                                    
+                                    const u8 d = depth > 255.0f ? 255 : (u8)depth;
+                                    quanta = (d << 24) | (b << 16) | (g << 8) | r;
                                     goto write_quanta;
                                 }
                             }
+                                
                         } while(r++ < Options::PROJECTION_GAPS_REDUCER);
                         depth++;
                     }
@@ -527,6 +580,7 @@ void genAPoVSpace() {
         }
     }
     delete [] frame;
+    delete [] quantas;
     printf("  APoV region generated!\n\n");
 }
 
@@ -545,6 +599,7 @@ int main(int argc, char** argv) {
     
     if(voxels == NULL) {
         printf("File content is null");
+        return 0;
     }
     
     printf("\n");

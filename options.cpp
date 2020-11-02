@@ -12,6 +12,7 @@ u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
 u32 Options::MAX_RAY_DEPTH = 64;
+u32 Options::MAX_BLEND_DEPTH = 64;
 u32 Options::HORIZONTAL_POV_COUNT = 360;
 u32 Options::VERTICAL_POV_COUNT = 1;
 u32 Options::RAY_STEP = 1;
@@ -24,6 +25,7 @@ bool Options::ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
 bool Options::EXPORT_HEADER = false;
+bool Options::ENABLE_BLENDING = false;
 bool Options::BLUR_SMOOTH_MATRIX = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
 float Options::CLUT_COMPRESSION_FACTOR = 0.0f;
@@ -48,7 +50,7 @@ void Options::process(int argc, char **argv) {
             }
         } else if(name.find("ray-step:") == 0) {
             Options::RAY_STEP = std::stoi(name.substr(9));
-            if(!math::getPower((u16)Options::RAY_STEP)) {
+            if((Options::RAY_STEP != 1) && !math::getPower((u16)Options::RAY_STEP)) {
                 printf("!!!ray-step must be a power of 2!!!\n");
                 printf("!!!ray-step sets to 1!!!\n");
                 Options::RAY_STEP = 1;
@@ -96,6 +98,8 @@ void Options::process(int argc, char **argv) {
             }
         } else if(name.find("blur-mode:") == 0) {
             Options::BLUR_MODE = std::stoi(name.substr(10));
+        } else if(name.find("max-blend-depth:") == 0) {
+            Options::MAX_BLEND_DEPTH = std::stoi(name.substr(16));
         } else if(name.find("compress-clut") == 0) {
             Options::COMPRESS_CLUT = true;
         } else if(name.find("cam-hemisphere") == 0) {
@@ -110,12 +114,21 @@ void Options::process(int argc, char **argv) {
             Options::EXPORT_HEADER = true;
         } else if(name.find("blur-smooth-matrix") == 0) {
             Options::BLUR_SMOOTH_MATRIX = true;
+        } else if(name.find("enable-blending") == 0) {
+            Options::ENABLE_BLENDING = true;
         }
         i++;
     }
     
-    if(Options::MAX_RAY_DEPTH > 256) {
-        printf("!!!max-ray-depth greater than 256!!!\n");
+    if(Options::MAX_RAY_DEPTH > 255) {
+        printf("!!!max-ray-depth greater than 255!!!\n");
+        printf("!!!Depth greater than 255 would not be exported!!!\n");
+    }
+    
+    if(Options::ENABLE_BLENDING &&
+        (Options::MAX_RAY_DEPTH < Options::MAX_BLEND_DEPTH)) {
+        Options::MAX_BLEND_DEPTH = Options::MAX_RAY_DEPTH;
+        printf("!!!max-blend-depth sets to max-ray-length!!\n");
     }
     
     if(Options::PROJECTION_GAPS_REDUCER != 0) {
@@ -148,5 +161,15 @@ void Options::process(int argc, char **argv) {
             }
         } else printf("!!!Header export not available width clut!!!\n");
     }
-    printf("Options set.\n");
+    
+    printf("\n");
+    printf("cam-hemisphere ...... %s\n", Options::CAM_HEMISPHERE ? "On" : "Off");
+    printf("cam-lock-ahead ...... %s\n", Options::CAM_LOCK_AHEAD ? "On" : "Off");
+    printf("export-clut ......... %s\n", Options::EXPORT_CLUT ? "On" : "Off");
+    printf("compress-clut ....... %s\n", Options::COMPRESS_CLUT ? "On" : "Off");
+    printf("export-header ....... %s\n", Options::EXPORT_HEADER? "On" : "Off");
+    printf("anti-aliasing ....... %s\n", Options::ANTI_ALIASING ? "On" : "Off");
+    printf("blur-smooth-matrix .. %s\n", Options::BLUR_SMOOTH_MATRIX ? "On" : "Off");
+    printf("enable-blending ..... %s\n", Options::ENABLE_BLENDING ? "On" : "Off");
+    printf("\n");
 }
