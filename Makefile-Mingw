@@ -10,10 +10,10 @@ LDFLAGS = -lstdc++
 all: $(BIN)$(EXE)
 
 $(BIN)$(EXE): $(OBJS)
-	gcc -o $@ $^ $(LDFLAGS) $(CXFLAGS)
+	g++ -o $@ $^ $(LDFLAGS) $(CXFLAGS)
 
 $(BIN)%.o: %.cpp
-	gcc -o $@ -c $< $(CXFLAGS)
+	g++ -o $@ -c $< $(CXFLAGS)
     
 clean:
 	powershell " Remove-Item ./bin/*.o"
