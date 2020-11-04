@@ -435,12 +435,18 @@ void genAPoVSpace() {
                         do {
                             Vec4<float> ray = coordinates;
                             if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
-                                const float scale = 1.0f + (depth * PROJECTION_FACTOR); //Todo pre-calc
+                                float scale = 1.0f + (depth * PROJECTION_FACTOR); //Todo pre-calc
                                 ray.x *= scale + wrapper[r];
                                 ray.y *= scale + wrapper[r];
                                 ray.z *= scale + wrapper[r];
                             }
                             
+                            if(Options::SCALE) {
+                                ray.x *= Options::SCALE;
+                                ray.y *= Options::SCALE;
+                                ray.z *= Options::SCALE;
+                            }
+                                
                             ray.x += depth * raystep.x;
                             ray.y += depth * raystep.y;
                             ray.z += depth * raystep.z;

@@ -37,6 +37,7 @@
         static bool ENABLE_BLENDING;
         static float MAX_PROJECTION_DEPTH;
         static float CLUT_COMPRESSION_FACTOR;
+        static float SCALE;
         //
         static void process(int argc, char **argv);
     };
