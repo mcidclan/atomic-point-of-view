@@ -43,4 +43,9 @@
         u32 color;
         float depth;
     };
+    
+    struct Pov {
+        Vec4<float> raystep;
+        Vec4<float> q;
+    };
 #endif

@@ -25,12 +25,13 @@ static u32 VERTICAL_POV_COUNT;
 static u32 HORIZONTAL_POV_COUNT;
 static u32* space;
 
-static Vec4<float>* horizontalSpinAxis;
-static Vec4<float>* verticalSpinAxis;
+//static Vec4<float>* horizontalSpinAxis;
+//static Vec4<float>* verticalSpinAxis;
+static Pov* povs;
 
 void init() {
     PROJECTION_FACTOR = 1.0f / Options::MAX_PROJECTION_DEPTH;
-    COLOR_DEPTH_STEP = (1.0f/(float)Options::MAX_RAY_DEPTH);
+    COLOR_DEPTH_STEP = (1.0f / (float)Options::MAX_RAY_DEPTH);
 
     SPACE_WIDTH = Options::SPACE_BLOCK_SIZE * Options::WIDTH_BLOCK_COUNT;
     SPACE_HEIGHT = Options::SPACE_BLOCK_SIZE;
@@ -55,7 +56,41 @@ void init() {
 
     // Todo
     
-    {   
+    //if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
+                
+    printf("Caching spining point of views... ");
+    HORIZONTAL_POV_COUNT = Options::CAM_HEMISPHERE ?
+    Options::HORIZONTAL_POV_COUNT / 2 : Options::HORIZONTAL_POV_COUNT;
+    VERTICAL_POV_COUNT = Options::CAM_HEMISPHERE ?
+    Options::VERTICAL_POV_COUNT / 2 : Options::VERTICAL_POV_COUNT;    
+    
+    povs = new Pov[HORIZONTAL_POV_COUNT * VERTICAL_POV_COUNT];
+
+    u16 hstep = 0;
+    while(hstep < HORIZONTAL_POV_COUNT) {
+        u16 vstep = 0;
+        float hspin = (float)(hstep * (360 / Options::HORIZONTAL_POV_COUNT));
+        if(Options::CAM_HEMISPHERE && hspin >= 90.0f) {
+            hspin += 270.0f;
+        }
+        const Vec4<float> qa = math::getOrientedQuat({0.0f, 1.0f, 0.0f, _ang(hspin)});
+        while(vstep < VERTICAL_POV_COUNT) {
+            float vspin = (float)(vstep * (360 / Options::VERTICAL_POV_COUNT));
+            if(Options::CAM_HEMISPHERE && vspin >= 90.0f) {
+                vspin += 270.0f;
+            }
+                
+            const Vec4<float> qb = math::getOrientedQuat({1.0f, 0.0f, 0.0f, _ang(vspin)});
+            const Vec4<float> qc = math::mulQuat(qa, qb);
+            const Vec4<float> raystep = math::getSandwichProduct({0.0f, 0.0f, 1.0f, 0.0f}, qc);
+            povs[vstep + hstep * VERTICAL_POV_COUNT] = {raystep, qc};
+            vstep++;
+        }
+        hstep++;
+    }
+    printf("done!\n");
+    
+    /*{  
         HORIZONTAL_POV_COUNT = Options::CAM_HEMISPHERE ?
         Options::HORIZONTAL_POV_COUNT / 2 : Options::HORIZONTAL_POV_COUNT;
         horizontalSpinAxis = new Vec4<float>[HORIZONTAL_POV_COUNT];
@@ -71,9 +106,6 @@ void init() {
             i++;
         }
     }
-
-//
-
     {
         VERTICAL_POV_COUNT = Options::CAM_HEMISPHERE ?
         Options::VERTICAL_POV_COUNT / 2 : Options::VERTICAL_POV_COUNT;
@@ -89,13 +121,14 @@ void init() {
             }
             i++;
         }
-    }
+    }*/
 }
 
 void clean() {
     delete [] space;
-    delete [] horizontalSpinAxis;
-    delete [] verticalSpinAxis;
+    delete [] povs;
+    //delete [] horizontalSpinAxis;
+    //delete [] verticalSpinAxis;
 }
 
 template <typename T>
@@ -391,20 +424,16 @@ void genAPoVSpace() {
     } else file = fopen("_atoms.bin", "wb");
     
     if(file != NULL) {
-        u16 hspin = 0;
+        u16 hstep = 0;
         const float step = 100.0f / SPACE_ATOM_QUANTITY ;
-        while(hspin < HORIZONTAL_POV_COUNT) {
-            u16 vspin = 0;
-            const Vec4<float> qa = math::getOrientedQuat(horizontalSpinAxis[hspin]);
+        while(hstep < HORIZONTAL_POV_COUNT) {
             
-            while(vspin < VERTICAL_POV_COUNT) {
+            u16 vstep = 0;            
+            while(vstep < VERTICAL_POV_COUNT) {
+                Pov* const pov = &povs[vstep + hstep * VERTICAL_POV_COUNT];
+                
                 u32 i = 0;
                 u8 percent = 0;
-                const Vec4<float> qb = math::getOrientedQuat(verticalSpinAxis[vspin]);
-                
-                const Vec4<float> qc = math::mulQuat(qa, qb);
-                const Vec4<float> raystep = math::getSandwichProduct({0.0f, 0.0f, 1.0f, 0.0f}, qc);
-                
                 u32 writtenFileCount = 0;
                 while(i < SPACE_ATOM_QUANTITY) {
                     if((u8)(i * step) > percent) {
@@ -416,7 +445,7 @@ void genAPoVSpace() {
                         coordinates.z -= Options::CAM_DISTANCE;
                     }
                     
-                    coordinates = math::getSandwichProduct(coordinates, qc);
+                    coordinates = math::getSandwichProduct(coordinates, pov->q);
                     
                     if(Options::CAM_LOCK_AT) {
                         coordinates.z += Options::CAM_LOCK_AT;
@@ -427,9 +456,8 @@ void genAPoVSpace() {
                     bool blendRayStarted = false;
                     float blendDepthStart = Options::MAX_RAY_DEPTH;
                     
-                    //memset(quantas, 0, Options::MAX_RAY_DEPTH);
-                    
                     float depth = 0.0f;
+                    Vec4<float>* const raystep = &pov->raystep;
                     while(depth < Options::MAX_RAY_DEPTH) {
                         u8 r = 0; //Todo
                         do {
@@ -447,9 +475,9 @@ void genAPoVSpace() {
                                 ray.z *= Options::SCALE;
                             }
                                 
-                            ray.x += depth * raystep.x;
-                            ray.y += depth * raystep.y;
-                            ray.z += depth * raystep.z;
+                            ray.x += depth * raystep->x;
+                            ray.y += depth * raystep->y;
+                            ray.z += depth * raystep->z;
                             
                             u32 color = 0;
                             const u32 offset = getOffset(&ray);
@@ -530,12 +558,12 @@ void genAPoVSpace() {
                         }
                     }
                 }
-                vspin++;
+                vstep++;
                 printf("\r    100%% | %u frames in depth.", writtenFileCount);
-                printf(" | v scan | %d/%d\n", vspin, VERTICAL_POV_COUNT);
+                printf(" | v scan | %d/%d\n", vstep, VERTICAL_POV_COUNT);
             }
-            hspin++;
-            printf("        100%% | h scan | %d/%d\n\n", hspin, HORIZONTAL_POV_COUNT);
+            hstep++;
+            printf("        100%% | h scan | %d/%d\n\n", hstep, HORIZONTAL_POV_COUNT);
         }
         printf("Done!\n\n");
         fclose(file);
