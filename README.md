@@ -34,16 +34,16 @@ units of the grid. Apply the transformations, set the object position at 0.5,
 ### Generate the streamable data
 Copy the voxels.bin at the root of the repository. Then, as an example, run the
 following command to produce an APoV region with a locked camera navigation:
-./bin/apov space-block-size:256 vertical-pov-count:90 horizontal-pov-count:90 \
-    ray-step:2 max-ray-depth:192 projection-depth:300
+./bin/apov space-block-size:256 vertical-pov-count:36 horizontal-pov-count:36 \
+    ray-step:16 max-ray-depth:192 projection-depth:300
 
 Or, for a free camera navigation:
-./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:180 \
+./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:90 \
     ray-step:2 max-ray-depth:192 projection-depth:300 cam-lock-ahead
 
 
 For PSP, to get a smaller raw file, you can run something like the following:
-./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
+./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:72 \
     ray-step:8 max-ray-depth:192 projection-depth:300
 
 Or by using indexed colors:
