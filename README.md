@@ -1,7 +1,6 @@
 # Atomic Point of View | Generator
 ```
-Nom de code: APoV.
-
+### Nom de code: APoV
 APoV, standing for Atomic Point of View, is a variant of voxel raytracing,
 proposing an alternative to its realtime calculation cost. The main idea is
 to record the information for a ray, in a given 3d space region, on different
@@ -9,25 +8,33 @@ angles and from the point of view of each voxel. This will produce a huge amount
 of raw data, representing the region in multiple point of views. The data could
 then be read or streamed, bringing the advantage of a fast rendering result.
 
-The current generator records only 2 informations by ray, per space voxel. The
-RGB color of the scanned voxel, and the ray depth which is the length between
-the space voxel and the scanned voxel. The depth information could then be used
-by the navigator to produce realtime effects.
+The current generator exports two informations by ray, per space voxel. The
+RGB color of the scanned voxel (can be blended), and the ray depth which is
+the length between the space voxel and the scanned voxel. The depth information
+could then be used by an APoV Navigator to visualize the volume and/or to produce
+realtime effects.
 
 
+### The voxels.bin file entry
 To generate the APoV data file, you need a voxels file entry. You can use one
-of the available voxels.bin file from the zip or generate your own via blender.
+of the available voxels.bin file from the zip or generate your own via Blender.
+The apov-tga-raw-converter is recommended to get the voxels.bin from any 3d model.
+In this project you will find a scanner working on Blender 2.9+. Just place your
+mesh at the center of the scene and render the animation. This will generate tga
+files which can be converted into a voxels.bin file entry with the use of the
+apov-tga-raw-converter tool.
 
-Blender 2.78 is recommended to generate the voxels.bin file entry. First set the
-grid unit size to 1, remesh your object into blocks, ajust the scale value of
-the modifier to get the blocks aligned with the units of the grid. Apply the
-transformations, set the object position at 0.5, 0.5, 0.5. Apply position, then
-export the object with the available python script.
+Alternatively you can use the available python script with blender 2.78 to get
+the APoV file entry. First set the grid unit size to 1, remesh your object into
+blocks, ajust the scale value of the modifier to get the blocks aligned with the
+units of the grid. Apply the transformations, set the object position at 0.5,
+0.5, 0.5. Apply position, then export the object using the python script.
 
 
+### Generate the streamable data
 Copy the voxels.bin at the root of the repository. Then, as an example, run the
 following command to produce an APoV region with a locked camera navigation:
-./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:180 \
+./bin/apov space-block-size:256 vertical-pov-count:90 horizontal-pov-count:90 \
     ray-step:2 max-ray-depth:192 projection-depth:300
 
 Or, for a free camera navigation:
@@ -36,19 +43,19 @@ Or, for a free camera navigation:
 
 
 For PSP, to get a smaller raw file, you can run something like the following:
-./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:90 \
-    ray-step:4 max-ray-depth:192 projection-depth:300
+./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
+    ray-step:8 max-ray-depth:192 projection-depth:300
 
 Or by using indexed colors:
-./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:180 \
-    ray-step:2 max-ray-depth:192 projection-depth:300 export-clut compress-clut \
+./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
+    ray-step:8 max-ray-depth:192 projection-depth:300 export-clut compress-clut \
     clut-compression-mode:luminance
     
-Depending on the number of color you might need to ajust the clut compression by
-with the clut-compression-factor option.
+Depending on the number of color you might need to ajust the CLUT compression by
+using the clut-compression-factor option.
 
 
-###Available options
+### Available options
 ____________________________
 space-block-size: ......... Minimun size of a region block (default is 256^3)
 width-block-count: ........ Number of blocks in width
