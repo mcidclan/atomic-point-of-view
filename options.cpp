@@ -11,6 +11,7 @@ u8 Options::ANTI_ALIASING_THRESHOLD = 24;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u16 Options::SPACE_BLOCK_SIZE = 128;
+u16 Options::COLOR_MAP_SIZE = 16;
 u32 Options::MAX_RAY_DEPTH = 64;
 u32 Options::MAX_BLEND_DEPTH = 64;
 u32 Options::HORIZONTAL_POV_COUNT = 360;
@@ -26,6 +27,7 @@ bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
 bool Options::EXPORT_HEADER = false;
 bool Options::ENABLE_BLENDING = false;
+bool Options::EXPORT_ONE_BIT_COLOR_MAPPING = false;
 bool Options::BLUR_SMOOTH_MATRIX = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
 float Options::CLUT_COMPRESSION_FACTOR = 0.0f;
@@ -119,13 +121,20 @@ void Options::process(int argc, char **argv) {
             Options::BLUR_SMOOTH_MATRIX = true;
         } else if(name.find("enable-blending") == 0) {
             Options::ENABLE_BLENDING = true;
+        } else if(name.find("export-one-bit-color-mapping") == 0) {
+            Options::EXPORT_ONE_BIT_COLOR_MAPPING = true;
         }
         i++;
     }
     
-    if(Options::MAX_RAY_DEPTH > 255) {
-        printf("!!!max-ray-depth greater than 255!!!\n");
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        Options::EXPORT_CLUT = false;
+    }
+    
+    if(!Options::EXPORT_CLUT && Options::MAX_RAY_DEPTH > 255) {
         printf("!!!Depth greater than 255 would not be exported!!!\n");
+    } else if(Options::EXPORT_CLUT) {
+        printf("!!!Raw depth information will not be exported in CLUT mode!!!\n");
     }
     
     if(Options::ENABLE_BLENDING &&
@@ -145,7 +154,7 @@ void Options::process(int argc, char **argv) {
     }
     
     if(Options::EXPORT_HEADER) {
-        if(!Options::EXPORT_CLUT) {
+        if(!Options::EXPORT_CLUT) {            
             printf("Export header... ");
             FILE* file = fopen("_atoms.bin", "wb");
             if(file != NULL) {
@@ -157,6 +166,9 @@ void Options::process(int argc, char **argv) {
                 header[3] = Options::RAY_STEP;
                 header[4] = Options::WIDTH_BLOCK_COUNT;
                 header[5] = Options::DEPTH_BLOCK_COUNT;
+                if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+                    header[6] = Options::COLOR_MAP_SIZE;
+                }
                 fwrite(header, sizeof(u32), HEADER_LENGTH, file);
                 fclose(file);
                 delete header;
@@ -166,13 +178,14 @@ void Options::process(int argc, char **argv) {
     }
     
     printf("\n");
-    printf("cam-hemisphere ...... %s\n", Options::CAM_HEMISPHERE ? "On" : "Off");
-    printf("cam-lock-ahead ...... %s\n", Options::CAM_LOCK_AHEAD ? "On" : "Off");
-    printf("export-clut ......... %s\n", Options::EXPORT_CLUT ? "On" : "Off");
-    printf("compress-clut ....... %s\n", Options::COMPRESS_CLUT ? "On" : "Off");
-    printf("export-header ....... %s\n", Options::EXPORT_HEADER? "On" : "Off");
-    printf("anti-aliasing ....... %s\n", Options::ANTI_ALIASING ? "On" : "Off");
-    printf("blur-smooth-matrix .. %s\n", Options::BLUR_SMOOTH_MATRIX ? "On" : "Off");
-    printf("enable-blending ..... %s\n", Options::ENABLE_BLENDING ? "On" : "Off");
+    printf("cam-hemisphere ................. %s\n", Options::CAM_HEMISPHERE ? "On" : "Off");
+    printf("cam-lock-ahead ................. %s\n", Options::CAM_LOCK_AHEAD ? "On" : "Off");
+    printf("export-clut .................... %s\n", Options::EXPORT_CLUT ? "On" : "Off");
+    printf("compress-clut .................. %s\n", Options::COMPRESS_CLUT ? "On" : "Off");
+    printf("export-header .................. %s\n", Options::EXPORT_HEADER? "On" : "Off");
+    printf("anti-aliasing .................. %s\n", Options::ANTI_ALIASING ? "On" : "Off");
+    printf("blur-smooth-matrix ............. %s\n", Options::BLUR_SMOOTH_MATRIX ? "On" : "Off");
+    printf("enable-blending ................ %s\n", Options::ENABLE_BLENDING ? "On" : "Off");
+    printf("export-one-bit-color-mapping ... %s\n", Options::EXPORT_ONE_BIT_COLOR_MAPPING ? "On" : "Off");
     printf("\n");
 }

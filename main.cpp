@@ -16,6 +16,14 @@ static u16 SPACE_DEPTH;
 static u16 SPACE_HALF_WIDTH;
 static u16 SPACE_HALF_HEIGHT;
 static u16 SPACE_HALF_DEPTH;
+
+static u16 COLOR_MAP_WIDTH;
+static u16 COLOR_MAP_HEIGHT;
+static u16 COLOR_MAP_WIDTH_SCALE;
+static u16 COLOR_MAP_HEIGHT_SCALE;
+static u32 COLOR_MAP_SIZE;
+//static u32 COLOR_MAP_SIZE_SCALE;
+
 static u32 SPACE_SIZE_DIGITS_X;
 static u32 SPACE_SIZE_DIGITS_Y;
 static u32 SPACE_SIZE_DIGITS_Z;
@@ -48,6 +56,15 @@ void init() {
 
     FRAME_SIZE = SPACE_WIDTH * SPACE_HEIGHT;
     SPACE_ATOM_QUANTITY = SPACE_WIDTH * SPACE_HEIGHT * SPACE_DEPTH;
+    
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        COLOR_MAP_WIDTH = Options::COLOR_MAP_SIZE * Options::WIDTH_BLOCK_COUNT;
+        COLOR_MAP_HEIGHT = Options::COLOR_MAP_SIZE;
+        COLOR_MAP_SIZE = COLOR_MAP_WIDTH * COLOR_MAP_HEIGHT;
+        COLOR_MAP_WIDTH_SCALE = SPACE_WIDTH / COLOR_MAP_WIDTH;
+        COLOR_MAP_HEIGHT_SCALE = SPACE_HEIGHT / COLOR_MAP_WIDTH;
+        //COLOR_MAP_SIZE_SCALE = COLOR_MAP_WIDTH_SCALE * COLOR_MAP_HEIGHT_SCALE;
+    }
     
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
@@ -196,7 +213,7 @@ static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
     }
 }
 
-static void applyAntiAliasing(u32* const frame) {
+static void applyAntiAliasing(u32* const frame, const u16 FRAME_SIZE) {
     const u8 size = 1;
     const u8 threshold = Options::ANTI_ALIASING_THRESHOLD;
     const u8 MAT_UNIT_COUNT = size > 1 ? 16 : 8;
@@ -279,9 +296,11 @@ static void applyAntiAliasing(u32* const frame) {
     delete [] __frame;
 }
 
-void applyFilters(u32* const frame) {
+void applyFilters(void* const frame) {
     if(Options::ANTI_ALIASING) {
-        applyAntiAliasing(frame);
+        if(!Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+            applyAntiAliasing((u32*)frame, FRAME_SIZE);
+        }
     }
 }
 
@@ -356,13 +375,45 @@ u16 updateClut(u32 value) {
     return index;
 }
 
+u32 getAverage(std::vector<u32>& colors) {
+    u16 i = 0;
+    u32 r = 0, g = 0, b = 0, a = 0;
+    const u16 count = colors.size();
+    while(i < count) {
+        const u32 color = colors[i];
+        r += (color >> 24) & 0xFF;
+        g += (color >> 16) & 0xFF;
+        b += (color >> 8) & 0xFF;
+        a += color & 0xFF;
+        i++;
+    }
+    return ((r / count) << 24) | ((g / count) << 16) |
+           ((b / count) << 8 ) | (a / count);
+}
+
 void genAPoVSpace() {
     printf("Generating APoV region... \n");
     printf("  Scanning space...\n");
     FILE* file = NULL;
+    FILE* mfile = NULL;
+    
+    u32* map = NULL;
+    std::vector<u32>* _map = NULL;
+    
+    void* frame = NULL;
     void* indexes = NULL;
     
-    u32* const frame = new u32[FRAME_SIZE];
+    u32 FRAME_BIT_COUNT = 0;
+    
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        FRAME_BIT_COUNT = FRAME_SIZE / 8;
+        if(FRAME_SIZE % 8 != 0) {
+            printf("!!!Frame size should be a multiple of 8!!!\n");
+            return;
+        }
+        frame = new u8[FRAME_SIZE / 8];
+    } else frame = new u32[FRAME_SIZE];
+    
     Quanta* const quantas = new Quanta[Options::MAX_BLEND_DEPTH];
 
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
@@ -372,7 +423,7 @@ void genAPoVSpace() {
         2 * MIN_SCALE_STEP, -2 * MIN_SCALE_STEP,
         3 * MIN_SCALE_STEP, -3 * MIN_SCALE_STEP
     };
-                        
+    
     if(Options::EXPORT_CLUT) {
         file = fopen("clut-indexes.bin", "wb");
         if(Options::COMPRESS_CLUT) {
@@ -381,6 +432,13 @@ void genAPoVSpace() {
     } else if(Options::EXPORT_HEADER) {
         file = fopen("_atoms.bin", "ab");
     } else file = fopen("_atoms.bin", "wb");
+    
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        //_8888
+        map = new u32[COLOR_MAP_SIZE];
+        _map = new std::vector<u32>[COLOR_MAP_SIZE];
+        mfile = fopen("_map.bin", "wb");
+    }
     
     if(file != NULL) {
         u16 hstep = 0;
@@ -393,7 +451,7 @@ void genAPoVSpace() {
                 
                 u32 i = 0;
                 u8 percent = 0;
-                u32 writtenFileCount = 0;
+                u32 writtenFrameCount = 0;
                 while(i < SPACE_ATOM_QUANTITY) {
                     if((u8)(i * step) > percent) {
                         percent++;
@@ -490,24 +548,52 @@ void genAPoVSpace() {
                         } while(r++ < Options::PROJECTION_GAPS_REDUCER);
                         depth++;
                     }
-                    
                     write_quanta:
                     const u32 fid = i % FRAME_SIZE;
-                    frame[fid] = quanta;
-                    if(fid == FRAME_SIZE - 1) {
-                        applyFilters(frame);   
-                        if(Options::EXPORT_CLUT) {
-                            u32 i = FRAME_SIZE;
-                            while(i--) {
-                                if(Options::COMPRESS_CLUT) {
-                                    ((u8*)indexes)[i] = updateClut(frame[i]);
-                                } else ((u16*)indexes)[i] = updateClut(frame[i]);
+                    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+                        u8* const _frame = (u8*)frame;
+                        if(quanta) {
+                            const u8 slot = fid % 8;
+                            const u32 offset = (fid / 8);
+                            if(slot == 0) {
+                                _frame[offset] = 0b00000001;
+                            } else _frame[offset] |= 0b1 << slot;
+                        }
+                        
+                        const u16 x = (fid % SPACE_WIDTH) / COLOR_MAP_WIDTH_SCALE;
+                        const u16 y = (fid / SPACE_WIDTH) / COLOR_MAP_HEIGHT_SCALE;
+                        _map[x + y * COLOR_MAP_WIDTH_SCALE].push_back(quanta);
+                        
+                        if(fid == FRAME_SIZE - 1) {
+                            u32 i = 0;
+                            while(i < COLOR_MAP_SIZE) {
+                                map[i] = getAverage(_map[i]);
+                                _map[i].clear();
+                                i++;
                             }
-                            if(Options::COMPRESS_CLUT) {
-                                fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
-                            } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
-                        } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
-                        writtenFileCount++;
+                            //applyFilters(_frame);
+                            fwrite(_frame, sizeof(u8), FRAME_BIT_COUNT, file);
+                            fwrite(map, sizeof(u32), COLOR_MAP_SIZE, mfile);
+                            writtenFrameCount++;
+                        }
+                    } else {
+                        u32* const _frame = (u32*)frame;
+                        _frame[fid] = quanta;
+                        if(fid == FRAME_SIZE - 1) {
+                            applyFilters(_frame);   
+                            if(Options::EXPORT_CLUT) {
+                                u32 i = FRAME_SIZE;
+                                while(i--) {
+                                    if(Options::COMPRESS_CLUT) {
+                                        ((u8*)indexes)[i] = updateClut(_frame[i]);
+                                    } else ((u16*)indexes)[i] = updateClut(_frame[i]);
+                                }
+                                if(Options::COMPRESS_CLUT) {
+                                    fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
+                                } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
+                            } else fwrite(_frame, sizeof(u32), FRAME_SIZE, file);
+                            writtenFrameCount++;
+                        }
                     }
                     
                     i++;
@@ -518,7 +604,7 @@ void genAPoVSpace() {
                     }
                 }
                 vstep++;
-                printf("\r    100%% | %u frames in depth.", writtenFileCount);
+                printf("\r    100%% | %u frames in depth.", writtenFrameCount);
                 printf(" | v scan | %d/%d\n", vstep, VERTICAL_POV_COUNT);
             }
             hstep++;
@@ -526,7 +612,9 @@ void genAPoVSpace() {
         }
         printf("Done!\n\n");
         fclose(file);
-        
+        if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+            fclose(mfile);
+        }
         if(Options::EXPORT_CLUT) {
             fclose(file);
             printf("  Generating clut file...\n");
@@ -572,8 +660,16 @@ void genAPoVSpace() {
             printf("    Clut file generated!\n\n");
         }
     }
-    delete [] frame;
+    
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        delete [] ((u8*)frame);
+    } else delete [] ((u32*)frame); 
+    
     delete [] quantas;
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        delete [] map;
+        delete [] _map;
+    }
     printf("  APoV region generated!\n\n");
 }
 
@@ -607,6 +703,10 @@ int main(int argc, char** argv) {
     
     remove("atoms.apov");
     rename("_atoms.bin", "atoms.apov");
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        remove("map.apov");
+        rename("_map.bin", "map.apov");    
+    }
     clean();
     return 0;
 }

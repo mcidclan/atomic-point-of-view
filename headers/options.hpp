@@ -19,6 +19,7 @@
         static u8 WIDTH_BLOCK_COUNT;
         static u8 DEPTH_BLOCK_COUNT;
         static u16 SPACE_BLOCK_SIZE;
+        static u16 COLOR_MAP_SIZE;
         static u32 MAX_RAY_DEPTH;
         static u32 MAX_BLEND_DEPTH;
         static u32 HORIZONTAL_POV_COUNT;
@@ -35,6 +36,7 @@
         static bool CAM_HEMISPHERE;
         static bool EXPORT_HEADER;
         static bool ENABLE_BLENDING;
+        static bool EXPORT_ONE_BIT_COLOR_MAPPING;
         static float MAX_PROJECTION_DEPTH;
         static float CLUT_COMPRESSION_FACTOR;
         static float SCALE;
