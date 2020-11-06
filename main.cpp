@@ -23,10 +23,8 @@ static u32 SPACE_ATOM_QUANTITY;
 static u32 FRAME_SIZE;
 static u32 VERTICAL_POV_COUNT;
 static u32 HORIZONTAL_POV_COUNT;
-static u32* space;
 
-//static Vec4<float>* horizontalSpinAxis;
-//static Vec4<float>* verticalSpinAxis;
+static u32* space;
 static Pov* povs;
 
 void init() {
@@ -53,11 +51,7 @@ void init() {
     
     space = new u32[SPACE_ATOM_QUANTITY];
     memset(space, 0, SPACE_ATOM_QUANTITY * sizeof(u32));
-
-    // Todo
     
-    //if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
-                
     printf("Caching spining point of views... ");
     HORIZONTAL_POV_COUNT = Options::CAM_HEMISPHERE ?
     Options::HORIZONTAL_POV_COUNT / 2 : Options::HORIZONTAL_POV_COUNT;
@@ -89,46 +83,11 @@ void init() {
         hstep++;
     }
     printf("done!\n");
-    
-    /*{  
-        HORIZONTAL_POV_COUNT = Options::CAM_HEMISPHERE ?
-        Options::HORIZONTAL_POV_COUNT / 2 : Options::HORIZONTAL_POV_COUNT;
-        horizontalSpinAxis = new Vec4<float>[HORIZONTAL_POV_COUNT];
-        
-        u16 i = 0;
-        u16 id = 0;
-        while(i < Options::HORIZONTAL_POV_COUNT) {
-            const float spin = (float)(i * (360 / Options::HORIZONTAL_POV_COUNT));
-            if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
-                horizontalSpinAxis[id] = {0.0f, 1.0f, 0.0f, _ang(spin)};
-                id++;
-            }
-            i++;
-        }
-    }
-    {
-        VERTICAL_POV_COUNT = Options::CAM_HEMISPHERE ?
-        Options::VERTICAL_POV_COUNT / 2 : Options::VERTICAL_POV_COUNT;
-        verticalSpinAxis = new Vec4<float>[VERTICAL_POV_COUNT];
-        
-        u16 i = 0;
-        u16 id = 0;
-        while(i < Options::VERTICAL_POV_COUNT) {
-            const float spin = (float)(i * (360 / Options::VERTICAL_POV_COUNT));
-            if(!Options::CAM_HEMISPHERE || spin <= 90 || spin > 270) {
-                verticalSpinAxis[id] = {1.0f, 0.0f, 0.0f, _ang(spin)};
-                id++;
-            }
-            i++;
-        }
-    }*/
 }
 
 void clean() {
     delete [] space;
     delete [] povs;
-    //delete [] horizontalSpinAxis;
-    //delete [] verticalSpinAxis;
 }
 
 template <typename T>
@@ -619,7 +578,7 @@ void genAPoVSpace() {
 }
 
 // Path mode APoV generation
-// Point of views along the path described by d.
+// Point of views along the path described by the z axis.
 void genPathPoV() {
     genAPoVSpace();
 }
