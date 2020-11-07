@@ -82,6 +82,8 @@ void Options::process(int argc, char **argv) {
             Options::CLUT_COMPRESSION_FACTOR = std::stof(name.substr(24));
         } else if(name.find("scale:") == 0) {
             Options::SCALE = 1.0f / std::stof(name.substr(6));
+        } else if(name.find("color-map-size:") == 0) {
+            Options::COLOR_MAP_SIZE = std::stoi(name.substr(15));
         } else if(name.find("clut-compression-mode:") == 0) {
             if(name.substr(22) == "ycbcr") {
                 Options::CLUT_COMPRESSION_MODE = 1;

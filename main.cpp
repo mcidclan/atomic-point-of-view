@@ -552,17 +552,24 @@ void genAPoVSpace() {
                     const u32 fid = i % FRAME_SIZE;
                     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
                         u8* const _frame = (u8*)frame;
-                        if(quanta) {
-                            const u8 slot = fid % 8;
-                            const u32 offset = (fid / 8);
-                            if(slot == 0) {
-                                _frame[offset] = 0b00000001;
-                            } else _frame[offset] |= 0b1 << slot;
+                        
+                        const u8 slot = fid % 8;
+                        const u32 offset = (fid / 8);
+                        if(slot == 0) {
+                            if(quanta) {
+                                _frame[offset] = 0b1;
+                            } else _frame[offset] = 0b0;
+                        } else {
+                            if(quanta) {
+                                _frame[offset] |= 0b1 << slot;
+                            } else _frame[offset] &= ~(0b1 << slot);
                         }
                         
-                        const u16 x = (fid % SPACE_WIDTH) / COLOR_MAP_WIDTH_SCALE;
-                        const u16 y = (fid / SPACE_WIDTH) / COLOR_MAP_HEIGHT_SCALE;
-                        _map[x + y * COLOR_MAP_WIDTH_SCALE].push_back(quanta);
+                        if(quanta) {
+                            const u16 x = (fid % SPACE_WIDTH) / COLOR_MAP_WIDTH_SCALE;
+                            const u16 y = (fid / SPACE_WIDTH) / COLOR_MAP_HEIGHT_SCALE;
+                            _map[x + y * COLOR_MAP_WIDTH].push_back(quanta);
+                        }
                         
                         if(fid == FRAME_SIZE - 1) {
                             u32 i = 0;
