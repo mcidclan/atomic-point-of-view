@@ -85,5 +85,9 @@ clut-compression-mode: .... Available modes are ycbcr, rgb, luminance & average
 clut-compression-factor: .. Need to be used if the clut is saturated
 ____________________________
 export-header ............. Exports an header of 80 bytes containing the main
-                            options used to generate the file
+........................... options used to generate the file
+____________________________
+use-1bit-color-mapping .... Exports each data as a bit, which can be mapped with
+........................... the corresponding 2d color map. 
+color-map-size: ........... Defines the size of the color map.
 

@@ -123,7 +123,7 @@ void Options::process(int argc, char **argv) {
             Options::BLUR_SMOOTH_MATRIX = true;
         } else if(name.find("enable-blending") == 0) {
             Options::ENABLE_BLENDING = true;
-        } else if(name.find("export-one-bit-color-mapping") == 0) {
+        } else if(name.find("use-1bit-color-mapping") == 0) {
             Options::EXPORT_ONE_BIT_COLOR_MAPPING = true;
         }
         i++;
