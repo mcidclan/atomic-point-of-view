@@ -46,13 +46,30 @@ For PSP, to get a smaller raw file, you can run something like the following:
 ./bin/apov space-block-size:256 vertical-pov-count:1 horizontal-pov-count:72 \
     ray-step:8 max-ray-depth:192 projection-depth:300
 
-Or by using indexed colors:
+Or by using indexed colors.
+
+
+### Indexed colors & CLUT
 ./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
     ray-step:8 max-ray-depth:192 projection-depth:300 export-clut compress-clut \
     clut-compression-mode:luminance
-    
+
 Depending on the number of color you might need to ajust the CLUT compression by
 using the clut-compression-factor option.
+
+
+### 1 Bit Color Mapping
+1 bit color mapping or 1BCM is about generating two frames to be mapped for
+drawing the current point of view. The first frame is produced by recording each
+visible voxels as a bit. The other is a rendering of the visible colored voxels
+in very low definition. This allows the APoV generator to significantly reduce
+the amount of its output data.
+
+As an example, this is how to generate a streamable region of 45x45 point of
+views, using 1 Bit Color Mapping with a rgb map of 8x8 pixels:
+./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
+    ray-step:256 max-ray-depth:128 projection-depth:400 use-1bit-color-mapping \
+    export-header color-map-size:8
 
 
 ### Available options
