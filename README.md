@@ -64,12 +64,13 @@ using the clut-compression-factor option.
 ### 1 Bit Color Mapping
 1 bit color mapping or 1BCM is about generating two frames to be mapped for
 drawing the current point of view. The first frame is produced by recording each
-visible voxels as a bit. The other is a rendering of the visible colored voxels
+visible voxel as a bit. The other is a rendering of the visible colored voxels
 in very low definition. This allows the APoV generator to significantly reduce
-the amount of its output data.
+the amount of its output data. The depth information is still exported, but will
+be associated with a group of voxels instead of a single one.
 
 As an example, this is how to generate a streamable region of 45x45 point of
-views, using 1 Bit Color Mapping with a rgb map of 8x8 pixels:
+views, using 1 Bit Color Mapping with a RGB map of 8x8 pixels:
 ./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
     ray-step:256 max-ray-depth:128 projection-depth:400 use-1bit-color-mapping \
     export-header color-map-size:8
