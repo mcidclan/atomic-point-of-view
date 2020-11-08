@@ -37,6 +37,7 @@
         static bool EXPORT_HEADER;
         static bool ENABLE_BLENDING;
         static bool EXPORT_ONE_BIT_COLOR_MAPPING;
+        static bool EXPORT_SINGLE_FILE;
         static float MAX_PROJECTION_DEPTH;
         static float CLUT_COMPRESSION_FACTOR;
         static float SCALE;

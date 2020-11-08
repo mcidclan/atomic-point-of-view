@@ -437,7 +437,9 @@ void genAPoVSpace() {
         //_8888
         map = new u32[COLOR_MAP_SIZE];
         _map = new std::vector<u32>[COLOR_MAP_SIZE];
-        mfile = fopen("_map.bin", "wb");
+        if(!Options::EXPORT_SINGLE_FILE) {
+            mfile = fopen("_map.bin", "wb");
+        }
     }
     
     if(file != NULL) {
@@ -580,7 +582,10 @@ void genAPoVSpace() {
                             }
                             //applyFilters(_frame);
                             fwrite(_frame, sizeof(u8), FRAME_BIT_COUNT, file);
-                            fwrite(map, sizeof(u32), COLOR_MAP_SIZE, mfile);
+                            if(Options::EXPORT_SINGLE_FILE) {
+                                fwrite(map, sizeof(u32), COLOR_MAP_SIZE, file);
+                            }
+                            else fwrite(map, sizeof(u32), COLOR_MAP_SIZE, mfile);
                             writtenFrameCount++;
                         }
                     } else {
@@ -619,7 +624,7 @@ void genAPoVSpace() {
         }
         printf("Done!\n\n");
         fclose(file);
-        if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        if(Options::EXPORT_ONE_BIT_COLOR_MAPPING && !Options::EXPORT_SINGLE_FILE) {
             fclose(mfile);
         }
         if(Options::EXPORT_CLUT) {
@@ -710,7 +715,7 @@ int main(int argc, char** argv) {
     
     remove("atoms.apov");
     rename("_atoms.bin", "atoms.apov");
-    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING && !Options::EXPORT_SINGLE_FILE) {
         remove("map.apov");
         rename("_map.bin", "map.apov");    
     }
