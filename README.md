@@ -50,6 +50,9 @@ Or by using indexed colors.
 
 
 ### Indexed colors & CLUT
+Below, an example of how to generate an indexed image with its corresponding
+color lookup table. All available modes are listed in the options section.
+
 ./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
     ray-step:8 max-ray-depth:192 projection-depth:300 export-clut compress-clut \
     clut-compression-mode:luminance
