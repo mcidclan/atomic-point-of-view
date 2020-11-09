@@ -20,6 +20,7 @@ u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
 int Options::CAM_LOCK_AT = 0;
 int Options::CAM_DISTANCE = 0;
+bool Options::ENABLE_DEEP_TRANSPARENCY = false;
 bool Options::EXPORT_SINGLE_FILE = false;
 bool Options::EXPORT_CLUT = false;
 bool Options::COMPRESS_CLUT = false;
@@ -128,6 +129,8 @@ void Options::process(int argc, char **argv) {
             Options::EXPORT_ONE_BIT_COLOR_MAPPING = true;
         } else if(name.find("export-single-file") == 0) {
             Options::EXPORT_SINGLE_FILE = true;
+        } else if(name.find("enable-deep-transparency") == 0) {
+            Options::ENABLE_DEEP_TRANSPARENCY = true;
         }
         i++;
     }

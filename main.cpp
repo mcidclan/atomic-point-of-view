@@ -518,35 +518,35 @@ void genAPoVSpace() {
                             }
                             
                             if(Options::ENABLE_BLENDING) {
-                                if(((color & 0xFF) == 0xFF) ||
-                                   ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1)) ||
-                                   (depth >= (Options::MAX_RAY_DEPTH - 1))) {
+                                if((
+                                    ((color & 0xFF) == 0xFF) ||
+                                    ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1)) ||
+                                    (depth >= (Options::MAX_RAY_DEPTH - 1))) && qstep
+                                ) {
+                                    float _depth = 0.0f;
                                     u8 r = 0, g = 0, b = 0;
-                                    float depth = 0.0f;
+                                    const u16 mstep = qstep - 1;
                                     while(qstep--) {
-                                        const Quanta q = quantas[qstep];
-                                        const u8 _r = q.color >> 24;
-                                        const u8 _g = q.color >> 16;
-                                        const u8 _b = q.color >> 8;
-                                        float _a =  q.color & 0xFF;
-                                        
-                                        const float d = getDarkness(q.depth);
-                                        if(q.depth > depth) {
-                                            depth = q.depth;
+                                        const Quanta _q = quantas[qstep];
+                                        const float _d = getDarkness(_q.depth);
+                                        const u8 _r = (u8)(_d * ((_q.color >> 24) & 0xFF));
+                                        const u8 _g = (u8)(_d * ((_q.color >> 16) & 0xFF));
+                                        const u8 _b = (u8)(_d * ((_q.color >> 8) & 0xFF));
+                                        const float f = mstep && Options::ENABLE_DEEP_TRANSPARENCY ?
+                                            (((float)qstep) / mstep) : 1.0f;
+                                        const float _a = f * (_q.color & 0xFF) / 255.0f;
+                                        if(_q.depth > _depth) {
+                                            _depth = _q.depth;
                                         }
-                                        
-                                        _a = (_a / 255.0f) * d;
                                         r = (u8)(_r * _a + (1.0f - _a) * r);
                                         g = (u8)(_g * _a + (1.0f - _a) * g);
                                         b = (u8)(_b * _a + (1.0f - _a) * b);
                                     }
-                                    
-                                    const u8 d = depth > 255.0f ? 255 : (u8)depth;
+                                    const u8 d = _depth > 255.0f ? 255 : (u8)_depth;
                                     quanta = (d << 24) | (b << 16) | (g << 8) | r;
                                     goto write_quanta;
                                 }
-                            }
-                                
+                            }                            
                         } while(r++ < Options::PROJECTION_GAPS_REDUCER);
                         depth++;
                     }
