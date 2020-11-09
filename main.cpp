@@ -414,8 +414,11 @@ void genAPoVSpace() {
         frame = new u8[FRAME_SIZE / 8];
     } else frame = new u32[FRAME_SIZE];
     
-    Quanta* const quantas = new Quanta[Options::MAX_BLEND_DEPTH];
-
+    Quanta* quantas = NULL;
+    if(Options::ENABLE_BLENDING) {
+        quantas = new Quanta[Options::MAX_BLEND_DEPTH];
+    }
+    
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
     const float wrapper[7] = {
         0 * MIN_SCALE_STEP,
@@ -508,8 +511,7 @@ void genAPoVSpace() {
                                             blendDepthStart = depth;
                                             blendRayStarted = true;
                                         }
-                                        quantas[qstep] = {color, depth};
-                                        qstep++;
+                                        quantas[qstep++] = {color, depth};
                                     } else {
                                         quanta = getQuantum(color, depth);
                                         goto write_quanta;
@@ -520,21 +522,21 @@ void genAPoVSpace() {
                             if(Options::ENABLE_BLENDING) {
                                 if((
                                     ((color & 0xFF) == 0xFF) ||
-                                    ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1)) ||
+                                    ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1.0f)) ||
                                     (depth >= (Options::MAX_RAY_DEPTH - 1))) && qstep
                                 ) {
                                     float _depth = 0.0f;
                                     u8 r = 0, g = 0, b = 0;
-                                    const u16 mstep = qstep - 1;
                                     while(qstep--) {
                                         const Quanta _q = quantas[qstep];
                                         const float _d = getDarkness(_q.depth);
                                         const u8 _r = (u8)(_d * ((_q.color >> 24) & 0xFF));
                                         const u8 _g = (u8)(_d * ((_q.color >> 16) & 0xFF));
                                         const u8 _b = (u8)(_d * ((_q.color >> 8) & 0xFF));
-                                        const float f = mstep && Options::ENABLE_DEEP_TRANSPARENCY ?
-                                            (((float)qstep) / mstep) : 1.0f;
-                                        const float _a = f * (_q.color & 0xFF) / 255.0f;
+                                        float _a = ((_q.color & 0xFF) / 255.0f);
+                                        if(Options::ENABLE_DEEP_TRANSPARENCY) {
+                                            _a = powf(_a, Options::TRANSPARENCY_DEPTH);
+                                        }
                                         if(_q.depth > _depth) {
                                             _depth = _q.depth;
                                         }
@@ -677,7 +679,10 @@ void genAPoVSpace() {
         delete [] ((u8*)frame);
     } else delete [] ((u32*)frame); 
     
-    delete [] quantas;
+    if(Options::ENABLE_BLENDING) {
+        delete [] quantas;
+    }
+    
     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
         delete [] map;
         delete [] _map;

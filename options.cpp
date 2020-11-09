@@ -10,10 +10,11 @@ u8 Options::CLUT_COMPRESSION_MODE = 0;
 u8 Options::ANTI_ALIASING_THRESHOLD = 24;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
+u8 Options::TRANSPARENCY_DEPTH = 2;
 u16 Options::SPACE_BLOCK_SIZE = 128;
 u16 Options::COLOR_MAP_SIZE = 16;
 u32 Options::MAX_RAY_DEPTH = 64;
-u32 Options::MAX_BLEND_DEPTH = 64;
+u32 Options::MAX_BLEND_DEPTH = 64; // float
 u32 Options::HORIZONTAL_POV_COUNT = 360;
 u32 Options::VERTICAL_POV_COUNT = 1;
 u32 Options::RAY_STEP = 1;
@@ -109,6 +110,11 @@ void Options::process(int argc, char **argv) {
             Options::BLUR_MODE = std::stoi(name.substr(10));
         } else if(name.find("max-blend-depth:") == 0) {
             Options::MAX_BLEND_DEPTH = std::stoi(name.substr(16));
+        } else if(name.find("transparency-depth:") == 0) {
+            Options::TRANSPARENCY_DEPTH = std::stoi(name.substr(19));
+            if(Options::TRANSPARENCY_DEPTH == 0) {
+                Options::TRANSPARENCY_DEPTH = 1;
+            }
         } else if(name.find("compress-clut") == 0) {
             Options::COMPRESS_CLUT = true;
         } else if(name.find("cam-hemisphere") == 0) {
@@ -194,6 +200,7 @@ void Options::process(int argc, char **argv) {
     printf("anti-aliasing .................. %s\n", Options::ANTI_ALIASING ? "On" : "Off");
     printf("blur-smooth-matrix ............. %s\n", Options::BLUR_SMOOTH_MATRIX ? "On" : "Off");
     printf("enable-blending ................ %s\n", Options::ENABLE_BLENDING ? "On" : "Off");
+    printf("enable-deep-transparency ....... %s\n", Options::ENABLE_DEEP_TRANSPARENCY ? "On" : "Off");
     printf("export-one-bit-color-mapping ... %s\n", Options::EXPORT_ONE_BIT_COLOR_MAPPING ? "On" : "Off");
     printf("\n");
 }
