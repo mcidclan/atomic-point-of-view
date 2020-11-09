@@ -93,8 +93,9 @@ void init() {
                 
             const Vec4<float> qb = math::getOrientedQuat({1.0f, 0.0f, 0.0f, _ang(vspin)});
             const Vec4<float> qc = math::mulQuat(qa, qb);
-            const Vec4<float> raystep = math::getSandwichProduct({0.0f, 0.0f, 1.0f, 0.0f}, qc);
-            povs[vstep + hstep * VERTICAL_POV_COUNT] = {raystep, qc};
+            const Vec4<float> rayStep = math::getNormalized4(
+                math::getSandwichProduct({0.0f, 0.0f, 1.0f, 0.0f}, qc));
+            povs[vstep + hstep * VERTICAL_POV_COUNT] = {rayStep, qc};
             vstep++;
         }
         hstep++;
@@ -414,10 +415,7 @@ void genAPoVSpace() {
         frame = new u8[FRAME_SIZE / 8];
     } else frame = new u32[FRAME_SIZE];
     
-    Quanta* quantas = NULL;
-    if(Options::ENABLE_BLENDING) {
-        quantas = new Quanta[Options::MAX_BLEND_DEPTH];
-    }
+    std::vector<Quanta> quantas;
     
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
     const float wrapper[7] = {
@@ -473,19 +471,21 @@ void genAPoVSpace() {
                         coordinates.z += Options::CAM_LOCK_AT;
                     }
                     
-                    u16 qstep = 0;
                     u32 quanta = 0;
-                    bool blendRayStarted = false;
-                    float blendDepthStart = Options::MAX_RAY_DEPTH;
-                    
                     float depth = 0.0f;
-                    Vec4<float>* const raystep = &pov->raystep;
+                    bool blendRayStarted = false;
+                    float blendDepthStart = 0.0f;
+                    Vec4<float>* const rayStep = &pov->rayStep;
+                    
                     while(depth < Options::MAX_RAY_DEPTH) {
-                        u8 r = 0; //Todo
+                        //Todo wrapper
+                        u8 r = 0;
                         do {
                             Vec4<float> ray = coordinates;
+                            
                             if(Options::MAX_PROJECTION_DEPTH != 0.0f) {
-                                float scale = 1.0f + (depth * PROJECTION_FACTOR); //Todo pre-calc
+                                 //Todo pre-calc
+                                const float scale = 1.0f + (depth * PROJECTION_FACTOR);
                                 ray.x *= scale + wrapper[r];
                                 ray.y *= scale + wrapper[r];
                                 ray.z *= scale + wrapper[r];
@@ -497,9 +497,9 @@ void genAPoVSpace() {
                                 ray.z *= Options::SCALE;
                             }
                                 
-                            ray.x += depth * raystep->x;
-                            ray.y += depth * raystep->y;
-                            ray.z += depth * raystep->z;
+                            ray.x += depth * rayStep->x;
+                            ray.y += depth * rayStep->y;
+                            ray.z += depth * rayStep->z;
                             
                             u32 color = 0;
                             const u32 offset = getOffset(&ray);
@@ -511,7 +511,7 @@ void genAPoVSpace() {
                                             blendDepthStart = depth;
                                             blendRayStarted = true;
                                         }
-                                        quantas[qstep++] = {color, depth};
+                                        quantas.push_back({color, depth});
                                     } else {
                                         quanta = getQuantum(color, depth);
                                         goto write_quanta;
@@ -523,32 +523,36 @@ void genAPoVSpace() {
                                 if((
                                     ((color & 0xFF) == 0xFF) ||
                                     ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1.0f)) ||
-                                    (depth >= (Options::MAX_RAY_DEPTH - 1))) && qstep
+                                    (depth >= (Options::MAX_RAY_DEPTH - 1.0f)))
                                 ) {
-                                    float _depth = 0.0f;
-                                    u8 r = 0, g = 0, b = 0;
-                                    while(qstep--) {
-                                        const Quanta _q = quantas[qstep];
-                                        const float _d = getDarkness(_q.depth);
-                                        const u8 _r = (u8)(_d * ((_q.color >> 24) & 0xFF));
-                                        const u8 _g = (u8)(_d * ((_q.color >> 16) & 0xFF));
-                                        const u8 _b = (u8)(_d * ((_q.color >> 8) & 0xFF));
-                                        float _a = ((_q.color & 0xFF) / 255.0f);
-                                        if(Options::ENABLE_DEEP_TRANSPARENCY) {
-                                            _a = powf(_a, Options::TRANSPARENCY_DEPTH);
+                                    u16 qstep = quantas.size();
+                                    if(qstep) {
+                                        float _depth = 0.0f;
+                                        u8 r = 0, g = 0, b = 0;
+                                        while(qstep--) {
+                                            const Quanta _q = quantas[qstep];
+                                            const float _d = getDarkness(_q.depth);
+                                            const u8 _r = (u8)(_d * ((_q.color >> 24) & 0xFF));
+                                            const u8 _g = (u8)(_d * ((_q.color >> 16) & 0xFF));
+                                            const u8 _b = (u8)(_d * ((_q.color >> 8) & 0xFF));
+                                            float _a = ((_q.color & 0xFF) / 255.0f);
+                                            if(Options::ENABLE_DEEP_TRANSPARENCY) {
+                                                _a = powf(_a, Options::TRANSPARENCY_DEPTH);
+                                            }
+                                            if(_q.depth > _depth) {
+                                                _depth = _q.depth;
+                                            }
+                                            r = (u8)(_r * _a + (1.0f - _a) * r);
+                                            g = (u8)(_g * _a + (1.0f - _a) * g);
+                                            b = (u8)(_b * _a + (1.0f - _a) * b);
                                         }
-                                        if(_q.depth > _depth) {
-                                            _depth = _q.depth;
-                                        }
-                                        r = (u8)(_r * _a + (1.0f - _a) * r);
-                                        g = (u8)(_g * _a + (1.0f - _a) * g);
-                                        b = (u8)(_b * _a + (1.0f - _a) * b);
+                                        const u8 d = _depth > 255.0f ? 255 : (u8)_depth;
+                                        quanta = (d << 24) | (b << 16) | (g << 8) | r;
                                     }
-                                    const u8 d = _depth > 255.0f ? 255 : (u8)_depth;
-                                    quanta = (d << 24) | (b << 16) | (g << 8) | r;
+                                    quantas.clear();
                                     goto write_quanta;
                                 }
-                            }                            
+                            }
                         } while(r++ < Options::PROJECTION_GAPS_REDUCER);
                         depth++;
                     }
@@ -556,7 +560,6 @@ void genAPoVSpace() {
                     const u32 fid = i % FRAME_SIZE;
                     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
                         u8* const _frame = (u8*)frame;
-                        
                         const u8 slot = fid % 8;
                         const u32 offset = (fid / 8);
                         if(slot == 0) {
@@ -677,11 +680,7 @@ void genAPoVSpace() {
     
     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
         delete [] ((u8*)frame);
-    } else delete [] ((u32*)frame); 
-    
-    if(Options::ENABLE_BLENDING) {
-        delete [] quantas;
-    }
+    } else delete [] ((u32*)frame);
     
     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
         delete [] map;

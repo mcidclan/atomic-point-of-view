@@ -45,7 +45,7 @@
     };
     
     struct Pov {
-        Vec4<float> raystep;
+        Vec4<float> rayStep;
         Vec4<float> q;
     };
 #endif

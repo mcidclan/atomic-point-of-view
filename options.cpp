@@ -13,8 +13,8 @@ u8 Options::DEPTH_BLOCK_COUNT = 1;
 u8 Options::TRANSPARENCY_DEPTH = 2;
 u16 Options::SPACE_BLOCK_SIZE = 128;
 u16 Options::COLOR_MAP_SIZE = 16;
-u32 Options::MAX_RAY_DEPTH = 64;
-u32 Options::MAX_BLEND_DEPTH = 64; // float
+float Options::MAX_RAY_DEPTH = 64.0f;
+float Options::MAX_BLEND_DEPTH = 64.0f; // float
 u32 Options::HORIZONTAL_POV_COUNT = 360;
 u32 Options::VERTICAL_POV_COUNT = 1;
 u32 Options::RAY_STEP = 1;
@@ -63,7 +63,7 @@ void Options::process(int argc, char **argv) {
             }
             
         } else if(name.find("max-ray-depth:") == 0) {
-            Options::MAX_RAY_DEPTH = std::stoi(name.substr(14));
+            Options::MAX_RAY_DEPTH = std::stof(name.substr(14));
         } else if(name.find("width-block-count:") == 0) {
             Options::WIDTH_BLOCK_COUNT = std::stoi(name.substr(18));
         } else if(name.find("depth-block-count:") == 0) {
@@ -145,8 +145,8 @@ void Options::process(int argc, char **argv) {
         Options::EXPORT_CLUT = false;
     }
     
-    if(!Options::EXPORT_CLUT && Options::MAX_RAY_DEPTH > 255) {
-        printf("!!!Depth greater than 255 would not be exported!!!\n");
+    if(!Options::EXPORT_CLUT && Options::MAX_RAY_DEPTH > 255.0f) {
+        printf("!!!Depth greater than 255.0 would not be exported!!!\n");
     } else if(Options::EXPORT_CLUT) {
         printf("!!!Raw depth information will not be exported in CLUT mode!!!\n");
     }
@@ -197,6 +197,7 @@ void Options::process(int argc, char **argv) {
     printf("export-clut .................... %s\n", Options::EXPORT_CLUT ? "On" : "Off");
     printf("compress-clut .................. %s\n", Options::COMPRESS_CLUT ? "On" : "Off");
     printf("export-header .................. %s\n", Options::EXPORT_HEADER? "On" : "Off");
+    printf("export-single-file ............. %s\n", Options::EXPORT_SINGLE_FILE ? "On" : "Off");
     printf("anti-aliasing .................. %s\n", Options::ANTI_ALIASING ? "On" : "Off");
     printf("blur-smooth-matrix ............. %s\n", Options::BLUR_SMOOTH_MATRIX ? "On" : "Off");
     printf("enable-blending ................ %s\n", Options::ENABLE_BLENDING ? "On" : "Off");

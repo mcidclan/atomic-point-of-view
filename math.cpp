@@ -46,7 +46,14 @@ namespace math {
 
     template void addVector(Vec3<i16>* const, Vec3<float>* const);
 
+    template <typename T>
+    float getNorm(const T v) {
+        return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    }
     
+    template float getNorm(Vec4<float>);
+
+
     // Quaternions related functions
     Vec4<float> getNormalized4(Vec4<float> v) {
         const float norm = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w);

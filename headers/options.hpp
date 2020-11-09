@@ -21,8 +21,8 @@
         static u8 TRANSPARENCY_DEPTH;
         static u16 SPACE_BLOCK_SIZE;
         static u16 COLOR_MAP_SIZE;
-        static u32 MAX_RAY_DEPTH;
-        static u32 MAX_BLEND_DEPTH;
+        static float MAX_RAY_DEPTH;
+        static float MAX_BLEND_DEPTH;
         static u32 HORIZONTAL_POV_COUNT;
         static u32 VERTICAL_POV_COUNT;
         static u32 RAY_STEP;
