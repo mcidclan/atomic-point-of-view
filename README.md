@@ -57,6 +57,12 @@ color lookup table. All available modes are listed in the options section.
     ray-step:8 max-ray-depth:192 projection-depth:300 export-clut compress-clut \
     clut-compression-mode:luminance
 
+An other example rescaling the scanned region and using alpha blending.
+./bin/apov space-block-size:256 vertical-pov-count:45 horizontal-pov-count:45 \
+    ray-step:16 max-ray-depth:384 max-blend-depth:384 enable-blending \
+    enable-deep-transparency projection-depth:400 export-clut compress-clut \
+    clut-compression-mode:rgb clut-compression-factor:6 scale:0.9
+    
 Depending on the number of color you might need to ajust the CLUT compression by
 using the clut-compression-factor option.
 

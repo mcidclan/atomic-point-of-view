@@ -317,17 +317,13 @@ static u32 clut[CLUT_MAX_COLOR_COUNT] = {0};
 static std::map<u32, ClutChunk> clutMap;
 u16 updateClut(u32 value) {
     value = 0xFF000000 | value;
-    u32 key = ((u16)-1);
+    u32 key = ((u16)-1); // Todo
     
     if(Options::COMPRESS_CLUT) {
-        key = ((u8)-1);
-        static const float f = Options::CLUT_COMPRESSION_FACTOR;
-        const u32 k = 0x00FFFFFF & value;
-        const float r = (k & 0x000000FF);
-        const float g = ((k >> 8) & 0x000000FF);
-        const float b = ((k >> 16) & 0x000000FF);
-        const float l = (r + g + b) / 3;
-        
+        static const float f = Options::CLUT_COMPRESSION_FACTOR;        
+        const float r = value & 0xFF;
+        const float g = (value >> 8) & 0xFF;
+        const float b = (value >> 16) & 0xFF;
         if(Options::CLUT_COMPRESSION_MODE == 1) {
             static const float _f = f / 8.0f;
             const u8 y = (0.299f * r + 0.587f * g + 0.114f * b - 128.0f) / _f;
@@ -344,7 +340,10 @@ u16 updateClut(u32 value) {
             const u8 _g = 0.587f * (g / f);
             const u8 _b = 0.114f * (b / f);
             key = (_r << 16) | (_g << 8) | _b;
-        } else key = l;
+        } else {
+            const float l = (r + g + b) / 3;
+            key = l;
+        }
     }
     
     if(!clutMap.count(key)) {
@@ -360,10 +359,9 @@ u16 updateClut(u32 value) {
         if(std::find(v.begin(), v.end(), value) == v.end()) {
             v.push_back(value);
         }
-    }
-        
-    u16 index = clutMap[key].index;
+    }   
     
+    u16 index = clutMap[key].index;
     if(Options::COMPRESS_CLUT) {
         if(index >= CLUT_COLOR_COUNT) {
             index = 0;//CLUT_COLOR_COUNT - 1;

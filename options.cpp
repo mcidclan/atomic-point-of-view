@@ -33,7 +33,7 @@ bool Options::ENABLE_BLENDING = false;
 bool Options::EXPORT_ONE_BIT_COLOR_MAPPING = false;
 bool Options::BLUR_SMOOTH_MATRIX = false;
 float Options::MAX_PROJECTION_DEPTH = 0.0f;
-float Options::CLUT_COMPRESSION_FACTOR = 0.0f;
+float Options::CLUT_COMPRESSION_FACTOR = 1.0f;
 float Options::SCALE = 0.0f;
 
 std::string Options::GENERATOR_TYPE = "path";
@@ -83,6 +83,9 @@ void Options::process(int argc, char **argv) {
             Options::ANTI_ALIASING_THRESHOLD = std::stoi(name.substr(24));
         } else if(name.find("clut-compression-factor:") == 0) {
             Options::CLUT_COMPRESSION_FACTOR = std::stof(name.substr(24));
+            if(!Options::CLUT_COMPRESSION_FACTOR) {
+                Options::CLUT_COMPRESSION_FACTOR = 1.0f;
+            }
         } else if(name.find("scale:") == 0) {
             Options::SCALE = 1.0f / std::stof(name.substr(6));
         } else if(name.find("color-map-size:") == 0) {
