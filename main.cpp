@@ -472,12 +472,11 @@ void genAPoVSpace() {
                     }
                     
                     u32 quanta = 0;
-                    float depth = 0.0f;
+                    float depth = 0.0f, rayLength = 0.0f;
                     bool blendRayStarted = false;
                     float blendDepthStart = 0.0f;
                     Vec4<float>* const rayStep = &pov->rayStep;
-                    
-                    while(depth < Options::MAX_RAY_DEPTH) {
+                    while(rayLength < Options::MAX_RAY_DEPTH) {
                         //Todo wrapper
                         u8 r = 0;
                         do {
@@ -501,6 +500,8 @@ void genAPoVSpace() {
                             ray.y += depth * rayStep->y;
                             ray.z += depth * rayStep->z;
                             
+                            rayLength = math::getNorm(math::sub(coordinates, ray));
+
                             u32 color = 0;
                             const u32 offset = getOffset(&ray);
                             if(offset != u32max) {
@@ -508,12 +509,12 @@ void genAPoVSpace() {
                                 if(color != 0) {
                                     if(Options::ENABLE_BLENDING) {
                                         if(!blendRayStarted) {
-                                            blendDepthStart = depth;
+                                            blendDepthStart = rayLength;
                                             blendRayStarted = true;
                                         }
-                                        quantas.push_back({color, depth});
+                                        quantas.push_back({color, rayLength});
                                     } else {
-                                        quanta = getQuantum(color, depth);
+                                        quanta = getQuantum(color, rayLength);
                                         goto write_quanta;
                                     }
                                 }
@@ -522,8 +523,8 @@ void genAPoVSpace() {
                             if(Options::ENABLE_BLENDING) {
                                 if((
                                     ((color & 0xFF) == 0xFF) ||
-                                    ((depth - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1.0f)) ||
-                                    (depth >= (Options::MAX_RAY_DEPTH - 1.0f)))
+                                    ((rayLength - blendDepthStart) >= (Options::MAX_BLEND_DEPTH - 1.0f)) ||
+                                    (rayLength >= (Options::MAX_RAY_DEPTH - 1.0f)))
                                 ) {
                                     u16 qstep = quantas.size();
                                     if(qstep) {

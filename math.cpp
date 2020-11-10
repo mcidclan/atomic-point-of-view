@@ -46,6 +46,16 @@ namespace math {
 
     template void addVector(Vec3<i16>* const, Vec3<float>* const);
 
+
+    Vec4<float> sub(const Vec4<float> va, const Vec4<float> vb) {
+        return {
+            vb.x - va.x,
+            vb.y - va.y,
+            vb.z - va.z,
+            vb.w - va.w
+        };
+    }
+
     template <typename T>
     float getNorm(const T v) {
         return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);

@@ -25,10 +25,12 @@
         template <typename T1, typename T2>
         void addVector(Vec3<T1>* const, Vec3<T2>* const);
         
-        // Quaternions related functions
+        //
         template <typename T>
         float getNorm(const T);
-
+        Vec4<float> sub(const Vec4<float>, const Vec4<float>);
+        
+        // Quaternions related functions
         Vec4<float> getNormalized4(Vec4<float>);
         Vec4<float> getConjugate(const Vec4<float>);
         Vec4<float> mulQuat(const Vec4<float> qa, const Vec4<float> qb);
