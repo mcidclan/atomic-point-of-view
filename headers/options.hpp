@@ -16,6 +16,7 @@
         static u8 BLUR_MODE;
         static u8 CLUT_COMPRESSION_MODE;
         static u8 ANTI_ALIASING_THRESHOLD;
+        static u8 TRACE_EGDES_THRESHOLD;
         static u8 WIDTH_BLOCK_COUNT;
         static u8 DEPTH_BLOCK_COUNT;
         static u8 TRANSPARENCY_DEPTH;
@@ -33,7 +34,8 @@
         static bool EXPORT_CLUT;
         static bool COMPRESS_CLUT;
         static bool CAM_LOCK_AHEAD;
-        static bool ANTI_ALIASING;
+        static bool ENABLE_ANTI_ALIASING;
+        static bool ENABLE_TRACE_EDGES;
         static bool CAM_HEMISPHERE;
         static bool EXPORT_HEADER;
         static bool ENABLE_BLENDING;

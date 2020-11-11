@@ -214,22 +214,16 @@ static void applyBlur(u32* const dst, u32* const src, u32* const mask = NULL) {
     }
 }
 
-static void applyAntiAliasing(u32* const frame, const u16 FRAME_SIZE) {
-    const u8 size = 1;
-    const u8 threshold = Options::ANTI_ALIASING_THRESHOLD;
+static void getEdges(u32* const frame, u32* const _frame,
+    const u8 threshold, const u8 size, const bool thin = false) {
     const u8 MAT_UNIT_COUNT = size > 1 ? 16 : 8;
-    u32* _frame = new u32[FRAME_SIZE];
-    u32* __frame = new u32[FRAME_SIZE];
-    memset(_frame, 0, FRAME_SIZE * sizeof(u32));
-    memset(__frame, 0, FRAME_SIZE * sizeof(u32));
-
     u32 x = SPACE_WIDTH - size;
     while(--x > size) {
         u32 y = SPACE_HEIGHT - size;
         while(--y > size) {
             const u32 i = x | y << SPACE_Y_BIT_OFFSET;
-            const u32 o = frame[i];
-            
+            const u32 o = frame[i];    
+
             u32 n[MAT_UNIT_COUNT] = {
                 (x + size) | y << SPACE_Y_BIT_OFFSET,
                 (x - size) | y << SPACE_Y_BIT_OFFSET,
@@ -282,26 +276,75 @@ static void applyAntiAliasing(u32* const frame, const u16 FRAME_SIZE) {
             if(o && (a || b || c || d || e || f || g || h ||
                 _a || _b || _c || _d || _e || _f || _g || _h)) {
                 _frame[i] = 0xFFFFFFFF;
-                u8 p = 8;
-                while(p--) {
-                    _frame[n[p]] = 0xFFFFFFFF;
+                if(!thin) {
+                    u8 p = 8;
+                    while(p--) {
+                        _frame[n[p]] = 0xFFFFFFFF;
+                    }
                 }
             }
         }
     }
-    
+}
+
+static void applyAntiAliasing(u32* const frame) {    
+    u32* _frame = new u32[FRAME_SIZE];
+    u32* __frame = new u32[FRAME_SIZE];
+    memset(_frame, 0, FRAME_SIZE * sizeof(u32));
+    memset(__frame, 0, FRAME_SIZE * sizeof(u32));
+    getEdges(frame, _frame, Options::ANTI_ALIASING_THRESHOLD, 1);
     memcpy(__frame, frame, FRAME_SIZE * sizeof(u32));
     applyBlur(frame, __frame, _frame);
-
     delete [] _frame;
     delete [] __frame;
 }
 
-void applyFilters(void* const frame) {
-    if(Options::ANTI_ALIASING) {
-        if(!Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
-            applyAntiAliasing((u32*)frame, FRAME_SIZE);
+static void removePixels(u32* const frame, u32* const mask) {
+    u32 i = 0;
+    while(i < FRAME_SIZE) {
+        if(mask[i]) {
+            frame[i] = 0;
         }
+        i++;
+    }
+}
+
+static void applyVoidToEgdes(u32* const frame) {
+    u32* _frame = new u32[FRAME_SIZE];
+    memset(_frame, 0, FRAME_SIZE * sizeof(u32));
+    getEdges(frame, _frame, Options::TRACE_EGDES_THRESHOLD, 1, true);
+    removePixels(frame, _frame);
+    delete [] _frame;
+}
+
+static void applyFilters(void* const frame) {
+    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        if(Options::ENABLE_TRACE_EDGES) {
+            applyVoidToEgdes((u32*)frame);
+        }
+    } else {
+        if(Options::ENABLE_ANTI_ALIASING) {
+            applyAntiAliasing((u32*)frame);
+        }
+    }    
+}
+
+static void getOBCM(u32* const frame, u8* const obcm) {
+    u32 i = 0;
+    while(i < FRAME_SIZE) {
+        const u8 slot = i % 8;
+        const u32 offset = (i / 8);
+        const u32 quanta = frame[i];
+        if(slot == 0) {
+            if(quanta) {
+                obcm[offset] = 0b1;
+            } else obcm[offset] = 0b0;
+        } else {
+            if(quanta) {
+                obcm[offset] |= 0b1 << slot;
+            } else obcm[offset] &= ~(0b1 << slot);
+        }
+        i++;
     }
 }
 
@@ -393,16 +436,17 @@ u32 getAverage(std::vector<u32>& colors) {
 void genAPoVSpace() {
     printf("Generating APoV region... \n");
     printf("  Scanning space...\n");
+    
     FILE* file = NULL;
     FILE* mfile = NULL;
     
     u32* map = NULL;
-    std::vector<u32>* _map = NULL;
-    
-    void* frame = NULL;
-    void* indexes = NULL;
-    
+    u8* obcm = NULL;
+    void* indexes = NULL;    
     u32 FRAME_BIT_COUNT = 0;
+    std::vector<Quanta> quantas;
+    std::vector<u32>* _map = NULL;
+    u32* frame = new u32[FRAME_SIZE];
     
     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
         FRAME_BIT_COUNT = FRAME_SIZE / 8;
@@ -410,10 +454,8 @@ void genAPoVSpace() {
             printf("!!!Frame size should be a multiple of 8!!!\n");
             return;
         }
-        frame = new u8[FRAME_SIZE / 8];
-    } else frame = new u32[FRAME_SIZE];
-    
-    std::vector<Quanta> quantas;
+        obcm = new u8[FRAME_SIZE / 8];
+    }
     
     const float MIN_SCALE_STEP = 1.0f / Options::SPACE_BLOCK_SIZE; //
     const float wrapper[7] = {
@@ -424,7 +466,7 @@ void genAPoVSpace() {
     };
     
     if(Options::EXPORT_CLUT) {
-        file = fopen("clut-indexes.bin", "wb");
+        file = fopen("_clut-indexes.bin", "wb");
         if(Options::COMPRESS_CLUT) {
             indexes = new u8[FRAME_SIZE];
         } else indexes = new u16[FRAME_SIZE];
@@ -557,26 +599,13 @@ void genAPoVSpace() {
                     }
                     write_quanta:
                     const u32 fid = i % FRAME_SIZE;
+                    frame[fid] = quanta;
                     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
-                        u8* const _frame = (u8*)frame;
-                        const u8 slot = fid % 8;
-                        const u32 offset = (fid / 8);
-                        if(slot == 0) {
-                            if(quanta) {
-                                _frame[offset] = 0b1;
-                            } else _frame[offset] = 0b0;
-                        } else {
-                            if(quanta) {
-                                _frame[offset] |= 0b1 << slot;
-                            } else _frame[offset] &= ~(0b1 << slot);
-                        }
-                        
                         if(quanta) {
                             const u16 x = (fid % SPACE_WIDTH) / COLOR_MAP_WIDTH_SCALE;
                             const u16 y = (fid / SPACE_WIDTH) / COLOR_MAP_HEIGHT_SCALE;
                             _map[x + y * COLOR_MAP_WIDTH].push_back(quanta);
                         }
-                        
                         if(fid == FRAME_SIZE - 1) {
                             u32 i = 0;
                             while(i < COLOR_MAP_SIZE) {
@@ -584,30 +613,28 @@ void genAPoVSpace() {
                                 _map[i].clear();
                                 i++;
                             }
-                            //applyFilters(_frame);
-                            fwrite(_frame, sizeof(u8), FRAME_BIT_COUNT, file);
+                            applyFilters(frame);
+                            getOBCM(frame, obcm);
+                            fwrite(obcm, sizeof(u8), FRAME_BIT_COUNT, file);
                             if(Options::EXPORT_SINGLE_FILE) {
                                 fwrite(map, sizeof(u32), COLOR_MAP_SIZE, file);
-                            }
-                            else fwrite(map, sizeof(u32), COLOR_MAP_SIZE, mfile);
+                            } else fwrite(map, sizeof(u32), COLOR_MAP_SIZE, mfile);
                             writtenFrameCount++;
                         }
                     } else {
-                        u32* const _frame = (u32*)frame;
-                        _frame[fid] = quanta;
                         if(fid == FRAME_SIZE - 1) {
-                            applyFilters(_frame);   
+                            applyFilters(frame);   
                             if(Options::EXPORT_CLUT) {
                                 u32 i = FRAME_SIZE;
                                 while(i--) {
                                     if(Options::COMPRESS_CLUT) {
-                                        ((u8*)indexes)[i] = updateClut(_frame[i]);
-                                    } else ((u16*)indexes)[i] = updateClut(_frame[i]);
+                                        ((u8*)indexes)[i] = updateClut(frame[i]);
+                                    } else ((u16*)indexes)[i] = updateClut(frame[i]);
                                 }
                                 if(Options::COMPRESS_CLUT) {
                                     fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
                                 } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
-                            } else fwrite(_frame, sizeof(u32), FRAME_SIZE, file);
+                            } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
                             writtenFrameCount++;
                         }
                     }
@@ -666,7 +693,7 @@ void genAPoVSpace() {
                 it++;
             }
             
-            file = fopen("clut.bin", "wb");
+            file = fopen("_clut.bin", "wb");
             fwrite(clut, sizeof(u32), count, file);          
             fclose(file);
             
@@ -715,12 +742,18 @@ int main(int argc, char** argv) {
     } else {
         genPathPoV();
     }
-    
-    remove("atoms.apov");
-    rename("_atoms.bin", "atoms.apov");
-    if(Options::EXPORT_ONE_BIT_COLOR_MAPPING && !Options::EXPORT_SINGLE_FILE) {
-        remove("map.apov");
-        rename("_map.bin", "map.apov");    
+    if(Options::EXPORT_CLUT) {
+        remove("clut-indexes.bin");
+        rename("_clut-indexes.bin", "clut-indexes.bin");    
+        remove("clut.bin");
+        rename("_clut.bin", "clut.bin");
+    } else {
+        remove("atoms.apov");
+        rename("_atoms.bin", "atoms.apov");
+        if(Options::EXPORT_ONE_BIT_COLOR_MAPPING && !Options::EXPORT_SINGLE_FILE) {
+            remove("map.apov");
+            rename("_map.bin", "map.apov");    
+        }
     }
     clean();
     return 0;

@@ -8,6 +8,7 @@
 u8 Options::BLUR_MODE = 1;
 u8 Options::CLUT_COMPRESSION_MODE = 0;
 u8 Options::ANTI_ALIASING_THRESHOLD = 24;
+u8 Options::TRACE_EGDES_THRESHOLD = 24;
 u8 Options::WIDTH_BLOCK_COUNT = 1;
 u8 Options::DEPTH_BLOCK_COUNT = 1;
 u8 Options::TRANSPARENCY_DEPTH = 2;
@@ -21,11 +22,12 @@ u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
 int Options::CAM_LOCK_AT = 0;
 int Options::CAM_DISTANCE = 0;
+bool Options::ENABLE_TRACE_EDGES = false;
 bool Options::ENABLE_DEEP_TRANSPARENCY = false;
 bool Options::EXPORT_SINGLE_FILE = false;
 bool Options::EXPORT_CLUT = false;
 bool Options::COMPRESS_CLUT = false;
-bool Options::ANTI_ALIASING = false;
+bool Options::ENABLE_ANTI_ALIASING = false;
 bool Options::CAM_HEMISPHERE = false;
 bool Options::CAM_LOCK_AHEAD = false;
 bool Options::EXPORT_HEADER = false;
@@ -81,6 +83,8 @@ void Options::process(int argc, char **argv) {
             Options::CAM_LOCK_AT = std::stoi(name.substr(12));
         } else if(name.find("anti-aliasing-threshold:") == 0) {
             Options::ANTI_ALIASING_THRESHOLD = std::stoi(name.substr(24));
+        } else if(name.find("trace-edges-threshold:") == 0) {
+            Options::TRACE_EGDES_THRESHOLD = std::stoi(name.substr(22));
         } else if(name.find("clut-compression-factor:") == 0) {
             Options::CLUT_COMPRESSION_FACTOR = std::stof(name.substr(24));
             if(!Options::CLUT_COMPRESSION_FACTOR) {
@@ -123,7 +127,7 @@ void Options::process(int argc, char **argv) {
         } else if(name.find("cam-hemisphere") == 0) {
             Options::CAM_HEMISPHERE = true;
         } else if(name.find("anti-aliasing") == 0) {
-            Options::ANTI_ALIASING = true;
+            Options::ENABLE_ANTI_ALIASING = true;
         } else if(name.find("cam-lock-ahead") == 0) {
             Options::CAM_LOCK_AHEAD = true;
         } else if(name.find("export-clut") == 0) {
@@ -140,6 +144,8 @@ void Options::process(int argc, char **argv) {
             Options::EXPORT_SINGLE_FILE = true;
         } else if(name.find("enable-deep-transparency") == 0) {
             Options::ENABLE_DEEP_TRANSPARENCY = true;
+        } else if(name.find("enable-trace-edges") == 0) {
+            Options::ENABLE_TRACE_EDGES = true;
         }
         i++;
     }
@@ -201,7 +207,8 @@ void Options::process(int argc, char **argv) {
     printf("compress-clut .................. %s\n", Options::COMPRESS_CLUT ? "On" : "Off");
     printf("export-header .................. %s\n", Options::EXPORT_HEADER? "On" : "Off");
     printf("export-single-file ............. %s\n", Options::EXPORT_SINGLE_FILE ? "On" : "Off");
-    printf("anti-aliasing .................. %s\n", Options::ANTI_ALIASING ? "On" : "Off");
+    printf("enable-anti-aliasing ........... %s\n", Options::ENABLE_ANTI_ALIASING ? "On" : "Off");
+    printf("enable-trace-edges ............. %s\n", Options::ENABLE_TRACE_EDGES ? "On" : "Off");
     printf("blur-smooth-matrix ............. %s\n", Options::BLUR_SMOOTH_MATRIX ? "On" : "Off");
     printf("enable-blending ................ %s\n", Options::ENABLE_BLENDING ? "On" : "Off");
     printf("enable-deep-transparency ....... %s\n", Options::ENABLE_DEEP_TRANSPARENCY ? "On" : "Off");
