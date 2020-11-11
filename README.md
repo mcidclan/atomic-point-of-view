@@ -100,7 +100,7 @@ cam-lock-ahead ............ Lock the camera at the beginning of the space region
 ____________________________
 projection-depth: ......... Value used to pre-render the region with projection
 ____________________________
-anti-aliasing ............. Pre-render with the anti-aliasing filter on
+enable-anti-aliasing ...... Pre-render with the anti-aliasing filter on
 anti-aliasing-threshold: .. Threshold between the edges and the surrounding
 blur-smooth-matrix: ....... 
 blur-mode: ................ 
@@ -121,4 +121,6 @@ ____________________________
 use-1bit-color-mapping .... Exports each data as a bit, which can be mapped with
 ........................... the corresponding 2d color map. 
 color-map-size: ........... Defines the size of the color map.
+enable-trace-edges ........
+trace-edges-threshold .....
 
