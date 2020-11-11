@@ -273,14 +273,38 @@ static void getEdges(u32* const frame, u32* const _frame,
                 _h = math::abs<i16>(lumo - lumRGB(frame[n[3]])) > threshold;
             }
             
-            if(o && (a || b || c || d || e || f || g || h ||
-                _a || _b || _c || _d || _e || _f || _g || _h)) {
-                _frame[i] = 0xFFFFFFFF;
-                if(!thin) {
+            if(thin) {
+                const u8 count =
+                    (a ? 1 : 0) +
+                    (b ? 1 : 0) +
+                    (c ? 1 : 0) +
+                    (d ? 1 : 0) +
+                    (e ? 1 : 0) +
+                    (f ? 1 : 0) +
+                    (g ? 1 : 0) +
+                    (h ? 1 : 0);
+                    if(o && count >= 3) { // Todo opt
+                       const u8 count = 
+                           (_frame[n[0]] ? 1 : 0) +
+                           (_frame[n[1]] ? 1 : 0) +
+                           (_frame[n[2]] ? 1 : 0) +
+                           (_frame[n[3]] ? 1 : 0) +
+                           (_frame[n[4]] ? 1 : 0) +
+                           (_frame[n[5]] ? 1 : 0) +
+                           (_frame[n[6]] ? 1 : 0) +
+                           (_frame[n[7]] ? 1 : 0);
+                        if(count <= 2) { // Todo opt
+                            _frame[i] = 0xFFFFFFFF;
+                        }
+                    }
+            } else {
+                if(o && (a || b || c || d || e || f || g || h ||
+                    _a || _b || _c || _d || _e || _f || _g || _h)) {
+                    _frame[i] = 0xFFFFFFFF;
                     u8 p = 8;
                     while(p--) {
                         _frame[n[p]] = 0xFFFFFFFF;
-                    }
+                    }            
                 }
             }
         }
