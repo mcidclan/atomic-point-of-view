@@ -191,6 +191,7 @@ void Options::process(int argc, char **argv) {
                 header[5] = Options::DEPTH_BLOCK_COUNT;
                 if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
                     header[6] = Options::COLOR_MAP_SIZE;
+                    header[7] = Options::ENABLE_TRACE_EDGES ? 1 : 0;
                 }
                 fwrite(header, sizeof(u32), HEADER_LENGTH, file);
                 fclose(file);
