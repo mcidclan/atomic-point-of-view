@@ -470,7 +470,12 @@ void genAPoVSpace() {
     u32 FRAME_BIT_COUNT = 0;
     std::vector<Quanta> quantas;
     std::vector<u32>* _map = NULL;
-    u32* frame = new u32[FRAME_SIZE];
+    
+    u32* frame;
+    const u32 BLOCK_ATOM_QUANTITY = SPACE_ATOM_QUANTITY / Options::RAY_STEP;
+    if(Options::RENDER_BY_SPACE_BLOCK) {
+        frame = new u32[BLOCK_ATOM_QUANTITY];
+    } else frame = new u32[FRAME_SIZE];
     
     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
         FRAME_BIT_COUNT = FRAME_SIZE / 8;
@@ -623,7 +628,9 @@ void genAPoVSpace() {
                     }
                     write_quanta:
                     const u32 fid = i % FRAME_SIZE;
-                    frame[fid] = quanta;
+                    const u32 fof = writtenFrameCount * FRAME_SIZE;
+                    const u32 bid = fof + fid;
+                    frame[Options::RENDER_BY_SPACE_BLOCK ? bid : fid] = quanta;
                     if(Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
                         if(quanta) {
                             const u16 x = (fid % SPACE_WIDTH) / COLOR_MAP_WIDTH_SCALE;
@@ -647,28 +654,34 @@ void genAPoVSpace() {
                         }
                     } else {
                         if(fid == FRAME_SIZE - 1) {
-                            applyFilters(frame);   
-                            if(Options::EXPORT_CLUT) {
-                                u32 i = FRAME_SIZE;
-                                while(i--) {
+                            if(Options::RENDER_BY_SPACE_BLOCK) {
+                                applyFilters(&frame[fof]);
+                            } else {
+                                applyFilters(frame);   
+                                if(Options::EXPORT_CLUT) {
+                                    u32 i = FRAME_SIZE;
+                                    while(i--) {
+                                        if(Options::COMPRESS_CLUT) {
+                                            ((u8*)indexes)[i] = updateClut(frame[i]);
+                                        } else ((u16*)indexes)[i] = updateClut(frame[i]);
+                                    }
                                     if(Options::COMPRESS_CLUT) {
-                                        ((u8*)indexes)[i] = updateClut(frame[i]);
-                                    } else ((u16*)indexes)[i] = updateClut(frame[i]);
-                                }
-                                if(Options::COMPRESS_CLUT) {
-                                    fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
-                                } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
-                            } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
+                                        fwrite(indexes, sizeof(u8), FRAME_SIZE, file);
+                                    } else fwrite(indexes, sizeof(u16), FRAME_SIZE, file);
+                                } else fwrite(frame, sizeof(u32), FRAME_SIZE, file);
+                            }
                             writtenFrameCount++;
                         }
                     }
-                    
                     i++;
                     if(Options::RAY_STEP > 1) {
                         if(!(i % FRAME_SIZE)) {
                             i += (FRAME_SIZE * (Options::RAY_STEP - 1));
                         }
                     }
+                }
+                if(Options::RENDER_BY_SPACE_BLOCK) {
+                    fwrite(frame, sizeof(u32), BLOCK_ATOM_QUANTITY, file);
                 }
                 vstep++;
                 printf("\r    100%% | %u frames in depth.", writtenFrameCount);

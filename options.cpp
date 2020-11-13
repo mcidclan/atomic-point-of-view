@@ -22,6 +22,7 @@ u32 Options::RAY_STEP = 1;
 u32 Options::PROJECTION_GAPS_REDUCER = 0;
 int Options::CAM_LOCK_AT = 0;
 int Options::CAM_DISTANCE = 0;
+bool Options::RENDER_BY_SPACE_BLOCK = false;
 bool Options::ENABLE_TRACE_EDGES = false;
 bool Options::ENABLE_DEEP_TRANSPARENCY = false;
 bool Options::EXPORT_SINGLE_FILE = false;
@@ -122,6 +123,8 @@ void Options::process(int argc, char **argv) {
             if(Options::TRANSPARENCY_DEPTH == 0) {
                 Options::TRANSPARENCY_DEPTH = 1;
             }
+        } else if(name.find("render-by-space-block") == 0) {
+            Options::RENDER_BY_SPACE_BLOCK = true;
         } else if(name.find("compress-clut") == 0) {
             Options::COMPRESS_CLUT = true;
         } else if(name.find("cam-hemisphere") == 0) {
@@ -201,7 +204,14 @@ void Options::process(int argc, char **argv) {
         } else printf("!!!Header export not available width clut!!!\n");
     }
     
+    if(Options::EXPORT_CLUT ||
+       Options::EXPORT_ONE_BIT_COLOR_MAPPING) {
+        Options::RENDER_BY_SPACE_BLOCK = false;
+        printf("!!!Can't use render-by-space-block!!!");
+    }
+        
     printf("\n");
+    printf("render-by-space-block .......... %s\n", Options::RENDER_BY_SPACE_BLOCK ? "On" : "Off");
     printf("cam-hemisphere ................. %s\n", Options::CAM_HEMISPHERE ? "On" : "Off");
     printf("cam-lock-ahead ................. %s\n", Options::CAM_LOCK_AHEAD ? "On" : "Off");
     printf("export-clut .................... %s\n", Options::EXPORT_CLUT ? "On" : "Off");

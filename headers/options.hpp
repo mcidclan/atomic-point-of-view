@@ -30,6 +30,7 @@
         static u32 PROJECTION_GAPS_REDUCER;
         static int CAM_LOCK_AT;
         static int CAM_DISTANCE;
+        static bool RENDER_BY_SPACE_BLOCK;
         static bool BLUR_SMOOTH_MATRIX;
         static bool EXPORT_CLUT;
         static bool COMPRESS_CLUT;
